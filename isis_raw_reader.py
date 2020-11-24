@@ -403,10 +403,10 @@ class IsisRawReader:
         
         def update_param_sizes(new_size):
             self.instrument.spectrum_number_table = (c_int * new_size)()
-            self.instrument.hold_off_table = (c_int * new_size)()
-            self.instrument.L2_table = (c_int * new_size)()
-            self.instrument.UTn_tables_code = (c_int * new_size)()
-            self.instrument.two_theta = (c_int * new_size)()
+            self.instrument.hold_off_table = (c_float * new_size)()
+            self.instrument.L2_table = (c_float * new_size)()
+            self.instrument.UTn_tables_code = (c_float * new_size)()
+            self.instrument.two_theta = (c_float * new_size)()
             
         self.read_into_buffer(self.instrument.version)
         self.read_into_buffer(self.instrument.name)
