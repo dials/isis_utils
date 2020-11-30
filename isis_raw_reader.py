@@ -65,7 +65,7 @@ class IsisRawReader:
        
         def __init__(self):
             self.header = self.RawHeader()
-            self.format_version = c_int()
+            self.format_version = c_int(2)
             self.format = (c_int*3)()  # 0 = by TC, 1 = by spectrum
             
     class RunInfo:
@@ -286,7 +286,9 @@ class IsisRawReader:
             self.mode = (c_int * 5)()
             self.params = ((c_float * 5) * 4)()
             self.prescale = c_int()
-            self.boundaries = c_int()
+            self.raw_boundaries = c_int()
+            self.boundaries = c_float()
+
         
     class UserInfo:
         
@@ -453,6 +455,19 @@ class IsisRawReader:
         
     def read_time_channel_info(self):
         
+        def get_time_channel_boundaries(raw_boundaries, prescale, sync_delay, format_version):
+
+            added_delay = 4. * sync_delay
+            if format_version.value <= 1:
+                added_delay = 0
+            
+            boundaries = []
+            for i in raw_boundaries:
+                boundaries.append(i * (prescale.value / 32.) + added_delay)
+            return boundaries
+
+
+
         # The version buffer is not currectly defined
         # But in lieu of original documentation of the file structure
         # the hack below is necessary
@@ -464,9 +479,18 @@ class IsisRawReader:
         self.time_channel.num_spectra = self.instrument.num_detectors
         self.read_into_buffer(self.time_channel.prescale)
         
-        self.time_channel.boundaries = \
+        self.time_channel.raw_boundaries = \
         (c_int * (self.time_channel.num_time_channels + 1))()
-        self.read_into_buffer(self.time_channel.boundaries)
+
+        self.time_channel.boundaries = \
+        (c_float * (self.time_channel.num_time_channels + 1))()
+
+        self.read_into_buffer(self.time_channel.raw_boundaries)
+        boundaries_lst = get_time_channel_boundaries(self.time_channel.raw_boundaries,
+                                            self.time_channel.prescale, 
+                                            self.dae.params.frame_sync_delay,
+                                            self.summary.format_version)
+        self.time_channel.boundaries = (c_float * len(boundaries_lst))(*boundaries_lst)
         
     def read_user_info(self):
         self.read_into_buffer(self.user.version)
