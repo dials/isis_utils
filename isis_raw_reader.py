@@ -1,4 +1,7 @@
 from ctypes import Structure, Union, c_char, c_int, c_float, c_long, c_char_p, c_ulong
+import h5py
+from os import path
+import numpy as np
 
 class IsisRawReader:
 
@@ -32,8 +35,8 @@ class IsisRawReader:
 
     Usage:
     raw_file_path = "path/to/raw/file.raw"
-    isis_raw_reader = IsisRawReader()
-    isis_raw_reader.read_raw_file(raw_file_path)
+    self = IsisRawReader()
+    self.read_raw_file(raw_file_path)
 
     """
 
@@ -160,7 +163,6 @@ class IsisRawReader:
             self.name = (c_char * 8)()
             self.num_detectors = (c_int * 3)()
             self.num_monitors = c_int()
-            self.num_user_tables = c_int()
             self.monitor_detector_number = (c_int * 4)()
             self.monitor_prescale_val = (c_int * 4)()
             self.spectrum_number_table = c_int()
@@ -168,7 +170,7 @@ class IsisRawReader:
             self.L2_table = c_float()
             self.UTn_tables_code = c_int()
             self.two_theta = c_float()
-            self.num_user_tables = c_float()
+            self.num_user_tables = c_int()
             
     class SampleInfo:
         
@@ -266,7 +268,7 @@ class IsisRawReader:
             
         def __init__(self):
             self.params = self.RawDAE()
-            self.dae_version = c_int()
+            self.version = c_int()
             self.detector_crate_nums = c_int()
             self.detector_module_nums = c_int()
             self.detector_module_positions = c_int()
@@ -300,7 +302,7 @@ class IsisRawReader:
     class DataInfo:
         
         def __init__(self):
-            self.data_version = c_int()
+            self.version = c_int()
             self.data_header = self.RawDataHeader()
             self.ddes = self.RawDDES()
             self.compressed_data = c_long()
@@ -384,8 +386,7 @@ class IsisRawReader:
             else:
                 assert(counter + 4 < len(data_in)),\
                 "byte out of range"
-                
-                byte_packet.val = data_in[counter:counter+4]             
+                byte_packet.val = data_in[counter+1:counter+5]             
                 counter += 5       
             data_out[i] = byte_packet.pos
             
@@ -445,7 +446,7 @@ class IsisRawReader:
 
         update_param_sizes(self.instrument.num_detectors)
         
-        self.read_into_buffer(self.dae.dae_version)
+        self.read_into_buffer(self.dae.version)
         self.read_into_buffer(self.dae.params)
         self.read_into_buffer(self.dae.detector_crate_nums)
         self.read_into_buffer(self.dae.detector_module_nums)
@@ -505,7 +506,7 @@ class IsisRawReader:
         
     def read_data_info(self):
         
-        self.read_into_buffer(self.data.data_version)
+        self.read_into_buffer(self.data.version)
         self.read_into_buffer(self.data.data_header) 
         
         compression_type = self.data.data_header.compression_type
@@ -577,4 +578,603 @@ class IsisRawReader:
                         print(field_name, getattr(elem, field_name))
             except AttributeError:
                 print("Cannot read data_struct (can only print ctypes Structure instances)")
+
+
+
+    def output_tofraw_nexus_file(self, output_filename):
+        
+        """
+        Converts info in memory to TOFRaw NeXus format and outputs to output_filename.
+        
+        The NeXus format used here follows the guide here: 
+        https://www.nexusformat.org/TOFRaw.html
+        
+        """
+        
+        def load_beamline(nxs_file):
+            beamline = nxs_file.create_dataset("raw_data_1/beamline", (1,), dtype='|S3')
+            beamline[0] = self.summary.header.instrument_name
+            
+        def load_collection_time(nxs_file):
+            collection_time = nxs_file.create_dataset("raw_data_1/collection_time", (1,), dtype=np.dtype("f4"))
+            collection_time[0] = self.run.params.run_duration
+            
+        def load_definition(nxs_file):
+            definition = nxs_file.create_dataset("raw_data_1/definition", (1,), dtype='|S6')
+            definition[0] = b'TOFRAW'
+            
+        def load_definition_local(nxs_file):
+            definition_local = nxs_file.create_dataset("raw_data_1/definition_local", (1,), dtype='|S6')
+            definition_local[0] = b'ISISTOFRAW'
+            
+        def load_detector_1(nxs_file, num_detectors, num_channels):
+            
+            grp = nxs_file.create_group("raw_data_1/detector_1")
+            counts = grp.create_dataset("counts", (1, num_detectors + 1, num_channels), dtype=np.dtype("i4"))
+            counts[0] = np.array(self.data.compressed_data[:]).reshape(1, num_detectors + 1 , num_channels)
+            
+            period_idx = grp.create_dataset("period_index", (1,), dtype=np.dtype("i4"))
+            period_idx[0] = self.time_channel.num_periods
+            
+            spectrum_idx = grp.create_dataset("spectrum_index", (num_detectors,), dtype=np.dtype("i4"))
+            spectrum_idx[:] = self.instrument.spectrum_number_table[:]
+            
+            tof = grp.create_dataset("time_of_flight", (num_channels,), dtype=np.dtype("f4"))
+            tof[0] = num_channels
+            
+        def load_duration(nxs_file):
+            duration = nxs_file.create_dataset("raw_data_1/duration", (1,), dtype=np.dtype("f4"))
+            duration[0] = self.run.params.run_duration
+            
+        def convert_to_nxs_date(raw_date):
+
+            date_dict = {"JAN" : "1", "FEB" : "2", "MAR" : "3", "APR": "4",
+                        "MAY" : "5", "JUN" : "6", "JUL" : "7", "AUG" : "8",
+                        "SEP" : "9", "OCT" : "10", "NOV" : "11", "DEC" : "12"}
+
+            date = raw_date.decode().rstrip()
+            day, month, year = date.split("-")
+            return "-".join([year, date_dict[month], day])
+            
+        def load_end_time(nxs_file):
+            
+            end_time = nxs_file.create_dataset("raw_data_1/end_time", (1,), dtype="|S19")
+            raw_date = convert_to_nxs_date(self.run.params.end_date)
+            raw_time = self.run.params.end_time.decode()
+            end_time[0] = (raw_date + "T" + raw_time).encode()
+            
+        def load_experiment_identifier(nxs_file):
+            exp_identifier = nxs_file.create_dataset("raw_data_1/experiment_identifier", (1,), dtype="|S7")
+            exp_identifier[0] = str(self.run.params.proposal_num).encode()
+            
+        def load_frame_log(nxs_file):
+            nxs_file.create_group("raw_data_1/frame_log")
+            
+        def load_good_frames(nxs_file):
+            good_frames = nxs_file.create_dataset("raw_data_1/good_frames", (1,), dtype=np.dtype("i4"))
+            good_frames[0] = self.run.params.good_frames
+            
+        def load_instrument(nxs_file):
+            
+            inst_grp = nxs_file.create_group("raw_data_1/instrument")
+            
+            dae_grp = nxs_file.create_group("raw_data_1/instrument/dae")
+            
+            # Unable to find equivalent in .raw 
+            dae_grp.create_dataset("detector_table_file", (1,), dtype="|S28")
+            
+            period_idx = dae_grp.create_dataset("period_index", (1,), dtype=np.dtype("i4"))
+            period_idx[0] = self.time_channel.num_periods
+            
+            # Unable to find equivalent in .raw 
+            dae_grp.create_dataset("spectra_table_file", (1,), dtype=np.dtype("S35"))
+            
+            tc1_grp = dae_grp.create_group("time_channels_1")
+            
+            tof = tc1_grp.create_dataset("time_of_flight", (len(self.time_channel.boundaries[:]),), dtype=np.dtype("f4"))
+            tof[:] = self.time_channel.boundaries[:]
+            tof_raw = tc1_grp.create_dataset("time_of_flight_raw", 
+                                            (len(self.time_channel.raw_boundaries[:]),), 
+                                            dtype=np.dtype("f4"))
+            tof_raw[:] = self.time_channel.raw_boundaries[:]
+            
+            # Unable to find equivalent in .raw 
+            dae_grp.create_dataset("type", (1,), dtype=np.dtype("f4"))
+            
+            vetoes_grp = dae_grp.create_group("vetoes")
+            
+            # Unable to find equivalent in .raw 
+            vetoes_grp.create_dataset("ISIS_50Hz", (1,), dtype=np.dtype("i4"))
+            
+            # Unable to find equivalent in .raw 
+            vetoes_grp.create_dataset("TS2_pulse", (1,), dtype=np.dtype("i4"))
+            
+            ext0 = vetoes_grp.create_dataset("ext0", (1,), dtype=np.dtype("i4"))
+            ext0[0] = self.dae.params.external_vetoes[0]
+            
+            ext1 = vetoes_grp.create_dataset("ext1", (1,), dtype=np.dtype("i4"))
+            ext1[0] = self.dae.params.external_vetoes[1]
+            
+            ext2 = vetoes_grp.create_dataset("ext2", (1,), dtype=np.dtype("i4"))
+            ext2[0] = self.dae.params.external_vetoes[2]
+            
+            # Unable to find equivalent in .raw 
+            vetoes_grp.create_dataset("ext3", (1,), dtype=np.dtype("i4"))
+            
+            f_chopper_0 = vetoes_grp.create_dataset("fermi_chopper0", (1,), dtype=np.dtype("i4"))
+            f_chopper_0[0] = self.instrument.params.chopper_freq_1
+            
+            f_chopper_1 = vetoes_grp.create_dataset("fermi_chopper1", (1,), dtype=np.dtype("i4"))
+            f_chopper_1[0] = self.instrument.params.chopper_freq_2
+            
+            f_chopper_2 = vetoes_grp.create_dataset("fermi_chopper2", (1,), dtype=np.dtype("i4"))
+            f_chopper_2[0] = self.instrument.params.chopper_freq_3
+            
+            # Unable to find equivalent in .raw 
+            vetoes_grp.create_dataset("fermi_chopper3", (1,), dtype=np.dtype("i4"))
+
+            # Unable to find equivalent in .raw 
+            vetoes_grp.create_dataset("fifo", (1,), dtype=np.dtype("i4"))
+            
+            # Unable to find equivalent in .raw      
+            vetoes_grp.create_dataset("msmode", (1,), dtype=np.dtype("i4"))
+            
+            smp = vetoes_grp.create_dataset("smp", (1,), dtype=np.dtype("i4"))
+            smp[0] = self.dae.params.secondary_master_pulse
+            
+            # Unable to find equivalent in .raw 
+            dae_grp.create_dataset("writing_table_file", (1,), dtype=np.dtype("S30"))
+            
+            # detector_1 group within instrument group for some reason contains duplicates of the detector_1
+            # group above..
+            d1_grp = inst_grp.create_group("detector_1")
+            d1_counts = d1_grp.create_dataset("counts", (1,self.instrument.num_detectors+1,
+                                                        self.time_channel.num_time_channels+1), dtype=np.dtype("f4"))
+            d1_counts[:] = nxs_file['raw_data_1']['detector_1']['counts'][:]
+            
+            d1_delt = d1_grp.create_dataset("delt", (len(self.instrument.hold_off_table),), dtype=np.dtype("f4"))
+            d1_delt[:] = self.instrument.hold_off_table[:]
+            
+            d1_L2 = d1_grp.create_dataset("distance", (len(self.instrument.L2_table),), dtype=np.dtype("f4"))
+            d1_L2[:] = self.instrument.L2_table[:]
+            
+            # From .nxs examples, looks to be a sum of the longitude angles
+            # See https://www.nexusformat.org/TOFRaw.html
+            d1_polar_angle = d1_grp.create_dataset("polar_angle", (len(self.instrument.two_theta),), dtype=np.dtype("f4"))
+            d1_polar_angle[:] = self.instrument.two_theta[:]
+            
+            d1_detector_dist = d1_grp.create_dataset("source_detector_distance", (1,), dtype=np.dtype("f4"))
+            d1_detector_dist[0] = self.instrument.params.LOQ_souce_detector_distance
+            
+            d1_spectrum_idx = d1_grp.create_dataset("spectrum_index", (len(self.instrument.spectrum_number_table),), dtype=np.dtype("i4"))
+            d1_spectrum_idx[:] = nxs_file['raw_data_1']['detector_1']['spectrum_index'][:]
+            
+            d1_tof = d1_grp.create_dataset("time_of_flight", (len(self.time_channel.boundaries[:]),), dtype=np.dtype("f4"))
+            d1_tof[:] = self.time_channel.boundaries[:]
+            d1_tof_raw = d1_grp.create_dataset("time_of_flight_raw", 
+                                            (len(self.time_channel.raw_boundaries[:]),), 
+                                            dtype=np.dtype("f4"))
+            d1_tof_raw[:] = self.time_channel.raw_boundaries[:]
+            
+            
+            moderator_grp = inst_grp.create_group("moderator")
+            
+            # Unable to find equivalent in .raw
+            m_distance = moderator_grp.create_dataset("distance", (1,), dtype=np.dtype("f4"))
+            m_distance[0] = 0.0
+            
+            m_name = inst_grp.create_dataset("name", (1,), dtype=np.dtype("S3"))
+            m_name[0] = self.summary.header.instrument_name
+            
+            # Unable to find equivalent in .raw
+            source_grp = inst_grp.create_group("source")
+            source_grp.create_dataset("name", (1,), dtype=np.dtype("S4"))
+            source_grp.create_dataset("probe", (1,), dtype=np.dtype("S8"))
+            source_grp.create_dataset("type", (1,), dtype=np.dtype("S21"))
+            
+        def load_isis_vms_compat(nxs_file):
+                
+            def extract_struct_to_arr(data_struct, data_arr, data_type=None):
+                count=0
+                for i in data_struct._fields_:
+                    try:
+                        if data_type is None:
+                            data_arr[count] = getattr(data_struct, i[0])
+                        else:
+                            data_arr[count] = data_type(getattr(data_struct, i[0]))
+                        count += 1
+                    except TypeError:
+                        val = getattr(data_struct, i[0])
+                        for j in val: 
+                            if data_type is None:
+                                data_arr[count] = j
+                            else:
+                                data_arr[count] = data_type(j)
+                            count += 1
+
+
+            grp = nxs_file.create_group("raw_data_1/isis_vms_compat")
+            
+            add = grp.create_dataset("ADD", (9,), dtype=np.dtype("i4"))
+            for c,i in enumerate(self.info_positions._fields_):
+                add[c] = getattr(self.info_positions, i[0])
+        
+            code = grp.create_dataset("CODE", (len(self.instrument.UTn_tables_code),), dtype=np.dtype("i4"))
+            code[:] = self.instrument.UTn_tables_code[:]
+            
+            crat = grp.create_dataset("CRAT", (len(self.dae.detector_crate_nums),), dtype=np.dtype("i4"))
+            crat[:] = self.dae.detector_crate_nums[:]
+            
+            # Unable to find equivalent in .raw
+            grp.create_dataset("CRPB", (32,1), dtype=np.dtype("S4"))
+            
+            # Unable to find equivalent in .raw
+            grp.create_dataset("CSPB", (64,1), dtype=np.dtype("S4"))
+            
+            daep = grp.create_dataset("DAEP", (64,), dtype=np.dtype("i4"))
+            extract_struct_to_arr(self.dae.params, daep)
+
+            delt = grp.create_dataset("DELT", (len(self.instrument.hold_off_table),), dtype=np.dtype("f4"))
+            delt[:] = self.instrument.hold_off_table[:]
+            
+            form = grp.create_dataset("FORM", (1,), dtype=np.dtype("i4"))
+            form[0] = self.summary.format[0]
+            
+            #hdr = grp.create_dataset("HDR", (1,), dtype=np.dtype("S80"))
+            #extract_struct_to_arr(self.summary.header, hdr)
+            
+            irpb = grp.create_dataset("IRPB", (32,), dtype=np.dtype("i4"))
+            extract_struct_to_arr(self.run.params, irpb)
+            
+            ispb = grp.create_dataset("ISPB", (64,), dtype=np.dtype("i4"))
+            extract_struct_to_arr(self.sample.params, ispb)
+            
+            ivpb = grp.create_dataset("IVPB", (64,), dtype=np.dtype("i4"))
+            extract_struct_to_arr(self.instrument.params, ivpb)
+            
+            len2 = grp.create_dataset("LEN2", (len(self.instrument.L2_table),), dtype=np.dtype("f4"))
+            len2[:] = self.instrument.L2_table[:]
+            
+            mdet = grp.create_dataset("MDET", (len(self.instrument.monitor_detector_number),), dtype=np.dtype("i4"))
+            mdet[:] = self.instrument.monitor_detector_number[:]
+            
+            modn = grp.create_dataset("MODN", (len(self.dae.detector_module_nums),), dtype=np.dtype("i4"))
+            modn[:] = self.dae.detector_module_nums[:]
+            
+            monp = grp.create_dataset("MONP", len(self.instrument.monitor_prescale_val,), dtype=np.dtype("i4"))
+            monp[:] = self.instrument.monitor_prescale_val[:]
+            
+            mpos = grp.create_dataset("MPOS", (len(self.dae.detector_module_positions),), dtype=np.dtype("i4"))
+            mpos[:] = self.dae.detector_module_positions[:]
+            
+            name = grp.create_dataset("NAME", (1,), dtype=np.dtype("S8"))
+            name[:] = self.instrument.name[:]
+            
+            ndet = grp.create_dataset("NDET", (1,), dtype=np.dtype("i4"))
+            ndet[0] = self.instrument.num_detectors
+            
+            nfpp = grp.create_dataset("NFPP", (1,), dtype=np.dtype("i4"))
+            nfpp[0] = self.time_channel.num_frames_per_period.value
+            
+            nmon = grp.create_dataset("NMON", (1,), dtype=np.dtype("i4"))
+            nmon[0] = self.instrument.num_monitors.value
+            
+            note = grp.create_dataset("NOTE", (1,), dtype=np.dtype("S19"))
+            note[0] = b" No notes were made"
+            
+            nper = grp.create_dataset("NPER", (1,), dtype=np.dtype("i4"))
+            nper[0] = self.time_channel.num_periods.value
+            
+            nsp1 = grp.create_dataset("NSP1", (1,), dtype=np.dtype("i4"))
+            nsp1[0] = self.time_channel.num_spectra.value
+            
+            ntc1 = grp.create_dataset("NTC1", (1,), dtype=np.dtype("i4"))
+            ntc1[0] = self.time_channel.num_time_channels
+            
+            # Unable to find equivalent in .raw
+            grp.create_dataset("NTLL", (1,), dtype=np.dtype("i4"))
+            
+            ntrg = grp.create_dataset("NTRG", (1,), dtype=np.dtype("i4"))
+            ntrg[0] = self.time_channel.num_time_regimes.value
+            
+            nuse = grp.create_dataset("NUSE", (1,), dtype=np.dtype("i4"))
+            nuse[0] = self.instrument.num_user_tables.value
+            
+            pmap = grp.create_dataset("PMAP", (1,len(self.time_channel.period_num_per_period)), dtype=np.dtype("i4"))
+            pmap[0] = self.time_channel.period_num_per_period[:]
+            
+            pre1 = grp.create_dataset("PRE1", (1,), dtype=np.dtype("i4"))
+            pre1[0] = self.time_channel.prescale.value
+            
+            rrpb = grp.create_dataset("RRPB", (32,), dtype=np.dtype("f4"))
+            extract_struct_to_arr(self.run.params, rrpb)
+            
+            rspb = grp.create_dataset("RSPB", (64,), dtype=np.dtype("f4"))
+            extract_struct_to_arr(self.sample.params, rspb)
+            
+            run = grp.create_dataset("RUN", (1,), dtype=np.dtype("i4"))
+            run[0] = self.summary.header.run_number
+            
+            rvpb = grp.create_dataset("RVPB", (64,), dtype=np.dtype("f4"))
+            extract_struct_to_arr(self.run.params, rvpb)
+            
+            spb = grp.create_dataset("SPB", (64,), dtype=np.dtype("i4"))
+            extract_struct_to_arr(self.sample.params, spb)
+            
+            spec = grp.create_dataset("SPEC", (len(self.instrument.spectrum_number_table[:]),), dtype=np.dtype("i4"))
+            spec[:] = self.instrument.spectrum_number_table[:]
+            
+            tcm1 = grp.create_dataset("TCM1", (5,), dtype=np.dtype("i4"))
+            tcm1[:] = self.time_channel.mode[:]
+            
+            tcp1 = grp.create_dataset("TCP1", (20,), dtype=np.dtype("f4"))
+            extract_struct_to_arr(self.time_channel.params, tcp1)
+            
+            timr = grp.create_dataset("TIMR", (len(self.dae.detector_time_regimes[:]),), dtype=np.dtype("f4"))
+            timr[:] = self.dae.detector_time_regimes[:]
+            
+            titl = grp.create_dataset("TITL", (1,), dtype=np.dtype("S80"))
+            titl[:] = self.run.title[:]
+            
+            tthe = grp.create_dataset("TTHE", (len(self.instrument.two_theta),), dtype=np.dtype("f4"))
+            tthe[:] = self.instrument.two_theta[:]
+            
+            udet = grp.create_dataset("UDET", (len(self.dae.detector_user_nums),), dtype=np.dtype("f4"))
+            udet[:] = self.dae.detector_user_nums[:]
+            
+            ulen= grp.create_dataset("ULEN", (1,), dtype=np.dtype("i4"))
+            ulen[0] = self.user.length
+            
+            user = grp.create_dataset("USER", (1,), dtype=np.dtype("S160"))
+            user[0] = self.run.user
+            
+            ver1 = grp.create_dataset("VER1", (1,), dtype=np.dtype("i4"))
+            ver1[0] = self.summary.format_version.value
+            
+            ver2 = grp.create_dataset("VER2", (1,), dtype=np.dtype("i4"))
+            ver2[0] = self.run.version.value
+            
+            ver3 = grp.create_dataset("VER3", (1,), dtype=np.dtype("i4"))
+            ver3[0] = self.instrument.version.value
+
+            ver4 = grp.create_dataset("VER4", (1,), dtype=np.dtype("i4"))
+            ver4[0] = self.sample.env_version.value
+            
+            ver5 = grp.create_dataset("VER5", (1,), dtype=np.dtype("i4"))
+            ver5[0] = self.dae.version.value
+            
+            ver6 = grp.create_dataset("VER6", (1,), dtype=np.dtype("i4"))
+            ver6[0] = self.summary.format_version.value
+            
+            ver7 = grp.create_dataset("VER7", (1,), dtype=np.dtype("i4"))
+            ver7[0] = self.time_channel.version.value
+            
+            ver8 = grp.create_dataset("VER8", (1,), dtype=np.dtype("i4"))
+            ver8[0] = self.data.version.value
+            
+            ver9 = grp.create_dataset("VER9", (1,), dtype=np.dtype("i4"))
+            ver9[0] = self.log.version[0].value
+            
+        def load_measurement(nxs_file):
+            # Unable to find equivalent in .raw
+            grp = nxs_file.create_group("raw_data_1/measurement")
+            grp.create_dataset("first_run", (1,), dtype=np.dtype("i4"))
+            grp.create_dataset("id", (1,), dtype=np.dtype("S1"))
+            grp.create_dataset("label", (1,), dtype=np.dtype("S1"))
+            grp.create_dataset("subid", (1,), dtype=np.dtype("S1"))
+            grp.create_dataset("type", (1,), dtype=np.dtype("S1"))
+            
+        def load_monitor(nxs_file, monitor_num):
+            
+            grp = nxs_file.create_group("raw_data_1/monitor_" + str(monitor_num))
+            
+            data = grp.create_dataset("data", (1,1, 
+                                            self.time_channel.num_time_channels+1), 
+                                    dtype=np.dtype("i4"))
+            data[0,0,:] = nxs_file["raw_data_1"]["detector_1"]["counts"][0][self.instrument.monitor_detector_number[monitor_num]][:]
+            
+            # Unable to find equivalent in .raw
+            grp.create_dataset("period_index", (1,), dtype=np.dtype("i4"))
+            
+            spectrum_idx = grp.create_dataset("spectrum_index", (1,), dtype=np.dtype("i4"))
+            spectrum_idx[0] = self.instrument.monitor_detector_number[monitor_num]
+            
+            tof = grp.create_dataset("time_of_flight", (self.time_channel.num_time_channels+1,),
+                                    dtype=np.dtype("f4"))
+            tof[:] = self.time_channel.boundaries[:]
+            
+        def load_unsaved_monitor_events(nxs_file):
+            # Unable to find equivalent in .raw
+            nxs_file.create_dataset("raw_data_1/monitor_events_not_saved", (1,), dtype=np.dtype("i8"))
+
+            
+        def load_name(nxs_file):
+            name = nxs_file.create_dataset("raw_data_1/name", (1,), dtype=np.dtype("|S3"))
+            name[0] = self.summary.header.instrument_name
+
+        def load_notes(nxs_file):
+            # Unable to find equivalent in .raw
+            nxs_file.create_dataset("raw_data_1/notes", (1,), dtype=np.dtype("S1"))
+            
+        def load_periods(nxs_file):
+            grp = nxs_file.create_group("raw_data_1/periods")
+            
+            frames_req = grp.create_dataset("frames_requested", (1,), dtype=np.dtype("i4"))
+            frames_req[0] = self.run.params.requested_duration
+            
+            good_frames = grp.create_dataset("good_frames", (1,), dtype=np.dtype("i4"))
+            good_frames[0] = self.run.params.good_frames
+            
+            # Unable to find equivalent in .raw
+            grp.create_dataset("good_frames_daq", (1,), dtype=np.dtype("i4"))
+        
+            # Unable to find equivalent in .raw
+            grp.create_dataset("highest_used", (1,), dtype=np.dtype("i4"))
+            
+            # Unable to find equivalent in .raw
+            grp.create_dataset("labels", (1,), dtype=np.dtype("S8"))
+            
+            number = grp.create_dataset("numbers", (1,), dtype=np.dtype("i4"))
+            number[0] = self.time_channel.num_periods.value
+            
+            # Unable to find equivalent in .raw
+            grp.create_dataset("output", (1,), dtype=np.dtype("i4"))  
+            
+            proton_charge = grp.create_dataset("proton_charge", (1,), dtype=np.dtype("f4"))
+            proton_charge[0] = self.run.params.good_proton_charge
+            
+            proton_charge_raw = grp.create_dataset("proton_charge_raw", (1,), dtype=np.dtype("f4"))
+            proton_charge_raw[0] = self.run.params.total_proton_charge
+            
+            raw_frames = grp.create_dataset("raw_frames", (1,), dtype=np.dtype("i4"))
+            raw_frames[0] = self.run.params.raw_frames
+            
+            # Unable to find equivalent in .raw
+            grp.create_dataset("sequences", (1,), dtype=np.dtype("i4")) 
+            
+            # Unable to find equivalent in .raw
+            grp.create_dataset("total_counts", (1,), dtype=np.dtype("f4")) 
+            
+            mod_type = grp.create_dataset("type", (1,), dtype=np.dtype("i4"))
+            mod_type[0] = self.instrument.params.moderator_type
+            
+        def load_program_name(nxs_file):
+            # Unable to find equivalent in .raw
+            nxs_file.create_dataset("raw_data_1/program_name", (1,), dtype=np.dtype("S11"))
+            
+        def load_proton_charge(nxs_file):
+            proton_charge = nxs_file.create_dataset("raw_data_1/proton_charge", (1,), dtype=np.dtype("f4"))
+            proton_charge[0] = self.run.params.good_proton_charge
+                                                    
+        def load_proton_charge_raw(nxs_file):
+            proton_charge_raw = nxs_file.create_dataset("raw_data_1/proton_charge_raw", (1,), dtype=np.dtype("f4"))
+            proton_charge_raw[0] = self.run.params.total_proton_charge
+            
+        def load_raw_frames(nxs_file):
+            raw_frames = nxs_file.create_dataset("raw_data_1/raw_frames", (1,), dtype=np.dtype("i4"))
+            raw_frames[0] = self.run.params.raw_frames
+                                                
+        def load_run_cycle(nxs_file):
+            # Unable to find equivalent in .raw
+            nxs_file.create_dataset("raw_data_1/run_cycle", (1,), dtype=np.dtype("S4"))
+            
+        def load_run_number(nxs_file):
+            run_number = nxs_file.create_dataset("raw_data_1/run_number", (1,), dtype=np.dtype("i4"))
+            run_number[0] = self.run.number.value
+            
+        def load_runlog(nxs_file):
+            # Unable to find equivalent in .raw
+            nxs_file.create_group("raw_data_1/runlog")
+            
+        def load_sample(nxs_file):
+            grp = nxs_file.create_group("raw_data_1/sample")
+            
+            # Unable to find equivalent in .raw
+            grp.create_dataset("distance", (1,), dtype=np.dtype("f8")) 
+            
+            height = grp.create_dataset("height", (1,), dtype=np.dtype("f4"))
+            height[0] = self.sample.params.sample_height
+            
+            # Unable to find equivalent in .raw
+            grp.create_dataset("id", (1,), dtype=np.dtype("S1"))
+            
+            # Unable to find equivalent in .raw
+            grp.create_dataset("name", (1,), dtype=np.dtype("S1"))
+            
+            # Unable to find equivalent in .raw
+            grp.create_dataset("shape", (1,), dtype=np.dtype("S1"))    
+            
+            thickness = grp.create_dataset("thickness", (1,), dtype=np.dtype("f4"))
+            thickness[0] = self.sample.params.sample_thickness
+            
+            sample_type = grp.create_dataset("type", (1,), dtype=np.dtype("S1"))
+            sample_type[0] = str(self.sample.params.sample_type).encode()
+            
+            width = grp.create_dataset("width", (1,), dtype=np.dtype("f4"))
+            width[0] = self.sample.params.sample_width
+            
+        def load_script_name(nxs_file):
+            # Unable to find equivalent in .raw
+            nxs_file.create_dataset("raw_data_1/script_name", (1,), dtype=np.dtype("S1"))
+            
+        def load_seci_config(nxs_file):
+            # Unable to find equivalent in .raw
+            nxs_file.create_dataset("raw_data_1/seci_config", (1,), dtype=np.dtype("S25"))
+            
+        def load_selog(nxs_file):
+            # Unable to find equivalent in .raw
+            nxs_file.create_group("raw_data_1/selog")
+            
+        def load_start_time(nxs_file):
+            start_time = nxs_file.create_dataset("raw_data_1/start_time", (1,), dtype=np.dtype("S19"))
+            raw_date = convert_to_nxs_date(self.summary.header.start_date)
+            raw_time = self.summary.header.start_time.decode()
+            start_time[0] = (raw_date + "T" + raw_time).encode()
+            
+        def load_title(nxs_file):
+            title = nxs_file.create_dataset("raw_data_1/title", (1,), dtype=np.dtype("S80"))
+            title[:] = self.run.title[:]
+            
+                
+        def load_total_counts(nxs_file):
+            # Unable to find equivalent in .raw
+            nxs_file.create_dataset("raw_data_1/total_counts", (1,), dtype=np.dtype("f4"))
+            
+        def load_total_uncounted_counts(nxs_file):
+            # Unable to find equivalent in .raw
+            nxs_file.create_dataset("raw_data_1/total_uncounted_counts", (1,), dtype=np.dtype("i4"))
+
+        def load_user_1(nxs_file):
+            grp = nxs_file.create_group("raw_data_1/user_1")
+            affiliation = grp.create_dataset("affilication", (1,), dtype=np.dtype("S20"))
+            affiliation[0] = self.run.user.institute
+            name = grp.create_dataset("name", (1,), dtype=np.dtype("S20"))
+            name[0] = self.run.user.user
+                    
+        if path.isfile(output_filename):
+            raise IOError("{} already exists.".format(output_filename))
+        
+        nxs_file = h5py.File(output_filename, "a")
+        
+        load_beamline(nxs_file)
+        load_collection_time(nxs_file)
+        load_definition(nxs_file)
+        load_definition_local(nxs_file)
+        load_detector_1(nxs_file, self.instrument.num_detectors, self.time_channel.num_time_channels+1)
+        load_duration(nxs_file)
+        load_end_time(nxs_file)
+        load_experiment_identifier(nxs_file)
+        load_frame_log(nxs_file)
+        load_good_frames(nxs_file)
+        load_instrument(nxs_file)
+        #load_isis_vms_compat(nxs_file)
+        load_measurement(nxs_file)
+        load_monitor(nxs_file, 1)
+        load_monitor(nxs_file, 2)
+        load_monitor(nxs_file, 3)
+        load_unsaved_monitor_events(nxs_file)
+        load_name(nxs_file)
+        load_notes(nxs_file)
+        load_periods(nxs_file)
+        load_program_name(nxs_file)
+        load_proton_charge(nxs_file)
+        load_proton_charge_raw(nxs_file)
+        load_raw_frames(nxs_file)
+        load_run_cycle(nxs_file)
+        load_run_number(nxs_file)
+        load_runlog(nxs_file)
+        load_sample(nxs_file)
+        load_script_name(nxs_file)
+        load_seci_config(nxs_file)
+        load_selog(nxs_file)
+        load_start_time(nxs_file)
+        load_title(nxs_file)
+        load_total_counts(nxs_file)
+        load_total_uncounted_counts(nxs_file)
+        load_user_1(nxs_file)
+        
+        
+    
+
+    
             
