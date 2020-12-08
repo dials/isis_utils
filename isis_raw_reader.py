@@ -34,9 +34,15 @@ class IsisRawReader:
     within the file, stored in self.info_positions.    
 
     Usage:
+
+    # Read .raw file into memory
     raw_file_path = "path/to/raw/file.raw"
-    self = IsisRawReader()
-    self.read_raw_file(raw_file_path)
+    isis_raw_reader = IsisRawReader()
+    isis_raw_reader.read_raw_file(raw_file_path)
+
+    # Output .raw file as .nxs file
+    output_filename = "SXD.nxs"
+    isis_raw_reader.output_tofraw_nexus_file(output_filename)
 
     """
 
