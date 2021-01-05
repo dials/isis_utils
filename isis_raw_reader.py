@@ -42,7 +42,7 @@ class IsisRawReader:
 
     # Output .raw file as .nxs file
     output_filename = "SXD.nxs"
-    isis_raw_reader.output_tofraw_nexus_file(output_filename)
+    isis_raw_reader.output_tofraw_file(output_filename)
 
     """
 
@@ -587,7 +587,7 @@ class IsisRawReader:
 
 
 
-    def output_tofraw_nexus_file(self, output_filename):
+    def output_tofraw_file(self, output_filename):
         
         """
         Converts info in memory to TOFRaw NeXus format and outputs to output_filename.
@@ -969,7 +969,22 @@ class IsisRawReader:
             grp.create_dataset("label", (1,), dtype=np.dtype("S1"))
             grp.create_dataset("subid", (1,), dtype=np.dtype("S1"))
             grp.create_dataset("type", (1,), dtype=np.dtype("S1"))
-            
+
+        def load_measurement_first_run(nxs_file):
+            nxs_file["raw_data_1/measurement_first_run"] = nxs_file["raw_data_1/measurement/first_run"]
+    
+        def load_measurement_id(nxs_file):
+            nxs_file["raw_data_1/measurement_id"] = nxs_file["raw_data_1/measurement/id"]
+    
+        def load_measurement_label(nxs_file):
+            nxs_file["raw_data_1/measurement_label"] = nxs_file["raw_data_1/measurement/label"]
+    
+        def load_measurement_subid(nxs_file):
+            nxs_file["raw_data_1/measurement_subid"] = nxs_file["raw_data_1/measurement/subid"]
+
+        def load_measurement_type(nxs_file):
+            nxs_file["raw_data_1/measurement_type"] = nxs_file["raw_data_1/measurement/label"]
+
         def load_monitor(nxs_file, monitor_num):
             
             grp = nxs_file.create_group("raw_data_1/monitor_" + str(monitor_num))
@@ -1155,6 +1170,11 @@ class IsisRawReader:
         load_instrument(nxs_file)
         #load_isis_vms_compat(nxs_file)
         load_measurement(nxs_file)
+        load_measurement_first_run(nxs_file)
+        load_measurement_id(nxs_file)
+        load_measurement_label(nxs_file)
+        load_measurement_subid(nxs_file)
+        load_measurement_type(nxs_file)
         load_monitor(nxs_file, 1)
         load_monitor(nxs_file, 2)
         load_monitor(nxs_file, 3)
