@@ -618,6 +618,7 @@ class IsisRawReader:
             grp = nxs_file.create_group("raw_data_1/detector_1")
             counts = grp.create_dataset("counts", (1, num_detectors + 1, num_channels), dtype=np.dtype("i4"))
             counts[0] = np.array(self.data.compressed_data[:]).reshape(1, num_detectors + 1 , num_channels)
+            counts[0] = counts[0][:, 1:45101, 1:]
             
             period_idx = grp.create_dataset("period_index", (1,), dtype=np.dtype("i4"))
             period_idx[0] = self.time_channel.num_periods
