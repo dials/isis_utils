@@ -610,7 +610,7 @@ class IsisRawReader:
             definition[0] = b'TOFRAW'
             
         def load_definition_local(nxs_file):
-            definition_local = nxs_file.create_dataset("raw_data_1/definition_local", (1,), dtype='|S6')
+            definition_local = nxs_file.create_dataset("raw_data_1/definition_local", (1,), dtype='|S10')
             definition_local[0] = b'ISISTOFRAW'
             
         def load_detector_1(nxs_file, num_detectors, num_channels):
