@@ -640,7 +640,7 @@ class IsisRawReader:
             spectrum_idx[:] = self.instrument.spectrum_number_table[:]
             
             tof = grp.create_dataset("time_of_flight", (num_channels,), dtype=np.dtype("f4"))
-            tof[0] = num_channels
+            tof[0] = self.time_channel.boundaries[:] 
             
         def load_duration(nxs_file):
             duration = nxs_file.create_dataset("raw_data_1/duration", (1,), dtype=np.dtype("f4"))
