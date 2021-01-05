@@ -654,7 +654,7 @@ class IsisRawReader:
             exp_identifier[0] = str(self.run.params.proposal_num).encode()
             
         def load_frame_log(nxs_file):
-            nxs_file.create_group("raw_data_1/frame_log")
+            nxs_file.create_group("raw_data_1/framelog")
             
         def load_good_frames(nxs_file):
             good_frames = nxs_file.create_dataset("raw_data_1/good_frames", (1,), dtype=np.dtype("i4"))
