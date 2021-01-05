@@ -428,6 +428,19 @@ class IsisRawReader:
         update_param_sizes(self.instrument.num_detectors)
         
         self.read_into_buffer(self.instrument.spectrum_number_table)
+
+        """
+        NOTE:
+        The .raw spectrum_number_table is inconsistent with the .nxs
+        detector_1/spectrum_index. 
+        The former gives a 1D array from the top right of each detector
+        moving down each column (i.e for 64x64 detector [64,63,..]).
+        The .nxs index just gives [i for i in range(num pixels)].
+        When visualising both give the same laue plots, consistent with
+        SXD2001 only when using the indexing for a 64x64 detector:
+        np.arange(min_pixel_idx_range, max_pixel_idx_range).reshape(64,64).T
+        """
+
         self.read_into_buffer(self.instrument.hold_off_table)
         self.read_into_buffer(self.instrument.L2_table)
         self.read_into_buffer(self.instrument.UTn_tables_code)
