@@ -34,6 +34,17 @@ raw_data_1/periods/labels
 raw_data_1/periods/output
 raw_data_1/periods/sequences
 raw_data_1/periods/total_counts
+raw_data_1/run_cycle
+raw_data_1/run_log/*
+raw_data_1/sample/distance
+raw_data_1/sample/id
+raw_data_1/sample/name
+raw_data_1/sample/shape
+raw_data_1/script_name
+raw_data_1/seci_config
+raw_data_1/selog
+raw_data_1/total_counts
+raw_data_1/total_uncounted_counts
 
 
 The following params are not tested
@@ -49,6 +60,9 @@ raw_data_1/measurement_id
 raw_data_1/measurement_label
 raw_data_1/measurement_subid
 raw_data_1/measurement_type
+raw_data_1/proton_charge
+raw_data_1/proton_charge_raw
+raw_data_1/raw_frames
 
 The following params are not tested due to 
 known inconsistencies between file formats:
@@ -61,6 +75,9 @@ raw_data_1/monitor_*/*
 raw_data_1/periods/proton_charge
 raw_data_1/periods/proton_charge_raw
 raw_data_1/periods/type
+raw_data_1/run_number
+raw_data_1/sample/type
+raw_data_1/title
 
 """
 
@@ -88,7 +105,12 @@ raw_data_1/periods/type
 "raw_data_1/periods/good_frames",
 "raw_data_1/periods/number",
 "raw_data_1/periods/raw_frames",
-
+"raw_data_1/sample/height",
+"raw_data_1/sample/thickness",
+"raw_data_1/sample/width",
+"raw_data_1/start_time",
+"raw_data_1/user_1/affiliation",
+"raw_data_1/user_1/name"
 ])
 def test_same_value(nacl_nxs, nacl_gen_nxs, path):
     gen_val = nacl_gen_nxs[path][:]
@@ -99,13 +121,10 @@ def test_same_value(nacl_nxs, nacl_gen_nxs, path):
 [("raw_data_1/detector_1/counts", 1E-3),
 ("raw_data_1/detector_1/time_channels_1/time_of_flight", 1E-2),
 ("raw_data_1/instrument/dae/time_channels_1/time_of_flight_raw", 100),
-("raw_data_1/instrument/detector_1/delt", 1E-3),
-
+("raw_data_1/instrument/detector_1/delt", 1E-3)
 ])
 def test_same_array(nacl_nxs, nacl_gen_nxs, path, atol):
     gen_val = nacl_gen_nxs[path][:]
     expected_val = nacl_nxs[path][:]
     assert(gen_val.shape == expected_val.shape)
     assert(np.allclose(gen_val, expected_val, atol=atol))
-
-

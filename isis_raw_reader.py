@@ -1322,26 +1322,35 @@ class IsisRawReader:
             
         def load_program_name(nxs_file):
             # Unable to find equivalent in .raw
-            nxs_file.create_dataset("raw_data_1/program_name", (1,), dtype=np.dtype("S11"))
+            name = "raw_data_1/program_name"
+            _type = np.dtype("S11")
+            nxs_file.create_dataset(name, (1,), dtype=_type)
             
         def load_proton_charge(nxs_file):
-            proton_charge = nxs_file.create_dataset("raw_data_1/proton_charge", (1,), dtype=np.dtype("f4"))
-            proton_charge[0] = self.run.params.good_proton_charge
+            path = "raw_data_1/proton_charge"
+            link_path = "raw_data_1/periods/proton_charge"
+            nxs_file[path] = nxs_file[link_path]
                                                     
         def load_proton_charge_raw(nxs_file):
-            proton_charge_raw = nxs_file.create_dataset("raw_data_1/proton_charge_raw", (1,), dtype=np.dtype("f4"))
-            proton_charge_raw[0] = self.run.params.total_proton_charge
+            path = "raw_data_1/proton_charge_raw"
+            link_path = "raw_data_1/periods/proton_charge_raw"
+            nxs_file[path] = nxs_file[link_path]
             
         def load_raw_frames(nxs_file):
-            raw_frames = nxs_file.create_dataset("raw_data_1/raw_frames", (1,), dtype=np.dtype("i4"))
-            raw_frames[0] = self.run.params.raw_frames
+            path = "raw_data_1/raw_frames"
+            link_path = "raw_data_1/periods/raw_frames"
+            nxs_file[path] = nxs_file[link_path]
                                                 
         def load_run_cycle(nxs_file):
             # Unable to find equivalent in .raw
-            nxs_file.create_dataset("raw_data_1/run_cycle", (1,), dtype=np.dtype("S4"))
+            name = "raw_data_1/run_cycle"
+            _type = np.dtype("S4")
+            nxs_file.create_dataset(name, (1,), dtype=_type)
             
         def load_run_number(nxs_file):
-            run_number = nxs_file.create_dataset("raw_data_1/run_number", (1,), dtype=np.dtype("i4"))
+            name = "raw_data_1/run_number"
+            _type = np.dtype("i4")
+            run_number = nxs_file.create_dataset(name, (1,), dtype=_type)
             run_number[0] = self.run.number.value
             
         def load_runlog(nxs_file):
@@ -1352,9 +1361,13 @@ class IsisRawReader:
             grp = nxs_file.create_group("raw_data_1/sample")
             
             # Unable to find equivalent in .raw
-            grp.create_dataset("distance", (1,), dtype=np.dtype("f8")) 
+            name = "distance"
+            _type = np.dtype("f8")
+            grp.create_dataset(name, (1,), dtype=_type) 
             
-            height = grp.create_dataset("height", (1,), dtype=np.dtype("f4"))
+            name = "height"
+            _type = np.dtype("f4")
+            height = grp.create_dataset(name, (1,), dtype=_type)
             height[0] = self.sample.params.sample_height
             
             # Unable to find equivalent in .raw
@@ -1366,51 +1379,72 @@ class IsisRawReader:
             # Unable to find equivalent in .raw
             grp.create_dataset("shape", (1,), dtype=np.dtype("S1"))    
             
-            thickness = grp.create_dataset("thickness", (1,), dtype=np.dtype("f4"))
+            name = "thickness"
+            _type = np.dtype("f4")
+            thickness = grp.create_dataset(name, (1,), dtype=_type)
             thickness[0] = self.sample.params.sample_thickness
             
-            sample_type = grp.create_dataset("type", (1,), dtype=np.dtype("S1"))
+            name = "type"
+            _type = np.dtype("S1")
+            sample_type = grp.create_dataset(name, (1,), dtype=_type)
             sample_type[0] = str(self.sample.params.sample_type).encode()
             
-            width = grp.create_dataset("width", (1,), dtype=np.dtype("f4"))
+            name = "width"
+            _type = np.dtype("f4")
+            width = grp.create_dataset(name, (1,), dtype=_type)
             width[0] = self.sample.params.sample_width
             
         def load_script_name(nxs_file):
             # Unable to find equivalent in .raw
-            nxs_file.create_dataset("raw_data_1/script_name", (1,), dtype=np.dtype("S1"))
+            name = "raw_data_1/script_name"
+            _type = np.dtype("S1")
+            nxs_file.create_dataset(name, (1,), dtype=_type)
             
         def load_seci_config(nxs_file):
             # Unable to find equivalent in .raw
-            nxs_file.create_dataset("raw_data_1/seci_config", (1,), dtype=np.dtype("S25"))
+            name = "raw_data_1/seci_config"
+            _type = np.dtype("S25")
+            nxs_file.create_dataset(name, (1,), dtype=_type)
             
         def load_selog(nxs_file):
             # Unable to find equivalent in .raw
             nxs_file.create_group("raw_data_1/selog")
             
         def load_start_time(nxs_file):
-            start_time = nxs_file.create_dataset("raw_data_1/start_time", (1,), dtype=np.dtype("S19"))
+            name = "raw_data_1/start_time"
+            _type = np.dtype("S19")
+            start_time = nxs_file.create_dataset(name, (1,), dtype=_type)
             raw_date = convert_to_nxs_date(self.summary.header.start_date)
             raw_time = self.summary.header.start_time.decode()
             start_time[0] = (raw_date + "T" + raw_time).encode()
             
         def load_title(nxs_file):
-            title = nxs_file.create_dataset("raw_data_1/title", (1,), dtype=np.dtype("S80"))
+            name = "raw_data_1/title"
+            _type = np.dtype("S80")
+            title = nxs_file.create_dataset(name, (1,), dtype=_type)
             title[:] = self.run.title[:]
             
                 
         def load_total_counts(nxs_file):
             # Unable to find equivalent in .raw
-            nxs_file.create_dataset("raw_data_1/total_counts", (1,), dtype=np.dtype("f4"))
+            name = "raw_data_1/total_counts"
+            _type = np.dtype("f4")
+            nxs_file.create_dataset(name, (1,), dtype=_type)
             
         def load_total_uncounted_counts(nxs_file):
             # Unable to find equivalent in .raw
-            nxs_file.create_dataset("raw_data_1/total_uncounted_counts", (1,), dtype=np.dtype("i4"))
+            name = "raw_data_1/total_uncounted_counts"
+            _type = np.dtype("i4")
+            nxs_file.create_dataset(name, (1,), dtype=_type)
 
         def load_user_1(nxs_file):
             grp = nxs_file.create_group("raw_data_1/user_1")
-            affiliation = grp.create_dataset("affilication", (1,), dtype=np.dtype("S20"))
+            name = "affiliation"
+            _type = np.dtype("S13")
+            affiliation = grp.create_dataset(name, (1,), dtype=_type)
             affiliation[0] = self.run.user.institute
-            name = grp.create_dataset("name", (1,), dtype=np.dtype("S20"))
+
+            name = grp.create_dataset("name", (1,), dtype=np.dtype("S8"))
             name[0] = self.run.user.user
                     
         if path.isfile(output_filename):
