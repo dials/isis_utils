@@ -893,164 +893,284 @@ class IsisRawReader:
 
             grp = nxs_file.create_group("raw_data_1/isis_vms_compat")
             
-            add = grp.create_dataset("ADD", (9,), dtype=np.dtype("i4"))
+            name = "ADD"
+            _type = np.dtype("i4")
+            add = grp.create_dataset(name, (9,), dtype=_type)
             for c,i in enumerate(self.info_positions._fields_):
                 add[c] = getattr(self.info_positions, i[0])
         
-            code = grp.create_dataset("CODE", (len(self.instrument.UTn_tables_code),), dtype=np.dtype("i4"))
+            name = "CODE"
+            shape = (len(self.instrument.UTn_tables_code),)
+            _type = np.dtype("i4")
+            code = grp.create_dataset(name, shape, dtype=_type)
             code[:] = self.instrument.UTn_tables_code[:]
             
-            crat = grp.create_dataset("CRAT", (len(self.dae.detector_crate_nums),), dtype=np.dtype("i4"))
+            name = "CRAT"
+            shape = (len(self.dae.detector_crate_nums),) 
+            _type = np.dtype("i4")
+            crat = grp.create_dataset(name, shape, dtype=_type)
             crat[:] = self.dae.detector_crate_nums[:]
             
             # Unable to find equivalent in .raw
-            grp.create_dataset("CRPB", (32,1), dtype=np.dtype("S4"))
+            name = "CRPB"
+            shape = (32,1)
+            _type = np.dtype("S4")
+            grp.create_dataset(name, shape, dtype=_type)
             
             # Unable to find equivalent in .raw
-            grp.create_dataset("CSPB", (64,1), dtype=np.dtype("S4"))
+            name = "CSPB"
+            shape = (64,1)
+            _type = np.dtype("S4")
+            grp.create_dataset(name, shape, dtype=_type)
             
-            daep = grp.create_dataset("DAEP", (64,), dtype=np.dtype("i4"))
+            name = "DAEP"
+            _type = np.dtype("i4")
+            daep = grp.create_dataset(name, (64,), dtype=_type)
             extract_struct_to_arr(self.dae.params, daep)
 
-            delt = grp.create_dataset("DELT", (len(self.instrument.hold_off_table),), dtype=np.dtype("f4"))
+            name = "DELT"
+            shape = (len(self.instrument.hold_off_table),)
+            _type = np.dtype("f4")
+            delt = grp.create_dataset(name, shape, dtype=_type)
             delt[:] = self.instrument.hold_off_table[:]
             
-            form = grp.create_dataset("FORM", (1,), dtype=np.dtype("i4"))
+            name = "FORM"
+            _type = np.dtype("i4")
+            form = grp.create_dataset(name, (1,), dtype=_type)
             form[0] = self.summary.format[0]
-            
-            #hdr = grp.create_dataset("HDR", (1,), dtype=np.dtype("S80"))
+           
+            _type =  np.dtype("S80")
+            #hdr = grp.create_dataset("HDR", (1,), dtype=_type)
             #extract_struct_to_arr(self.summary.header, hdr)
             
-            irpb = grp.create_dataset("IRPB", (32,), dtype=np.dtype("i4"))
+            name = "IRPB"
+            _type = np.dtype("i4")
+            irpb = grp.create_dataset(name, (32,), dtype=_type)
             extract_struct_to_arr(self.run.params, irpb)
             
-            ispb = grp.create_dataset("ISPB", (64,), dtype=np.dtype("i4"))
+            name = "ISPB"
+            _type = np.dtype("i4")
+            ispb = grp.create_dataset(name, (64,), dtype=_type)
             extract_struct_to_arr(self.sample.params, ispb)
             
-            ivpb = grp.create_dataset("IVPB", (64,), dtype=np.dtype("i4"))
+            name = "IVPB"
+            _type = np.dtype("i4")
+            ivpb = grp.create_dataset(name, (64,), dtype=_type)
             extract_struct_to_arr(self.instrument.params, ivpb)
             
-            len2 = grp.create_dataset("LEN2", (len(self.instrument.L2_table),), dtype=np.dtype("f4"))
+            name = "LEN2"
+            shape = (len(self.instrument.L2_table),)
+            _type = np.dtype("f4")
+            len2 = grp.create_dataset(name, shape, dtype=_type)
             len2[:] = self.instrument.L2_table[:]
-            
-            mdet = grp.create_dataset("MDET", (len(self.instrument.monitor_detector_number),), dtype=np.dtype("i4"))
+
+            name = "MDET"            
+            shape = (len(self.instrument.monitor_detector_number),)
+            _type = np.dtype("i4")
+            mdet = grp.create_dataset(name, shape, dtype=_type)
             mdet[:] = self.instrument.monitor_detector_number[:]
             
-            modn = grp.create_dataset("MODN", (len(self.dae.detector_module_nums),), dtype=np.dtype("i4"))
+            name = "MODN"
+            shape = (len(self.dae.detector_module_nums),)
+            _type = np.dtype("i4")
+            modn = grp.create_dataset(name, shape,  dtype=_type)
             modn[:] = self.dae.detector_module_nums[:]
             
-            monp = grp.create_dataset("MONP", len(self.instrument.monitor_prescale_val,), dtype=np.dtype("i4"))
+            name = "MONP"
+            shape = len(self.instrument.monitor_prescale_val,)
+            _type = np.dtype("i4")
+            monp = grp.create_dataset(name, shape,  dtype=_type)
             monp[:] = self.instrument.monitor_prescale_val[:]
             
-            mpos = grp.create_dataset("MPOS", (len(self.dae.detector_module_positions),), dtype=np.dtype("i4"))
+            name = "MPOS"
+            shape = (len(self.dae.detector_module_positions),)
+            _type = np.dtype("i4")
+            mpos = grp.create_dataset(name, shape,  dtype=_type)
             mpos[:] = self.dae.detector_module_positions[:]
             
-            name = grp.create_dataset("NAME", (1,), dtype=np.dtype("S8"))
+            name = "NAME"
+            _type = np.dtype("S8")
+            name = grp.create_dataset(name, (1,), dtype=_type)
             name[:] = self.instrument.name[:]
             
-            ndet = grp.create_dataset("NDET", (1,), dtype=np.dtype("i4"))
+            name = "NDET"
+            _type = np.dtype("i4")
+            ndet = grp.create_dataset(name, (1,), dtype=_type)
             ndet[0] = self.instrument.num_detectors
             
-            nfpp = grp.create_dataset("NFPP", (1,), dtype=np.dtype("i4"))
+            name = "NFPP"
+            _type = np.dtype("i4")
+            nfpp = grp.create_dataset(name, (1,), dtype=_type)
             nfpp[0] = self.time_channel.num_frames_per_period.value
             
-            nmon = grp.create_dataset("NMON", (1,), dtype=np.dtype("i4"))
+            name = "NMON"
+            _type = np.dtype("i4")
+            nmon = grp.create_dataset(name, (1,), dtype=_type)
             nmon[0] = self.instrument.num_monitors.value
-            
-            note = grp.create_dataset("NOTE", (1,), dtype=np.dtype("S19"))
+
+            name = "NOTE"            
+            _type = np.dtype("S19")
+            note = grp.create_dataset(name, (1,), dtype=_type)
             note[0] = b" No notes were made"
             
-            nper = grp.create_dataset("NPER", (1,), dtype=np.dtype("i4"))
+            name = "NPER"
+            _type = np.dtype("i4")
+            nper = grp.create_dataset(name, (1,), dtype=_type)
             nper[0] = self.time_channel.num_periods.value
             
-            nsp1 = grp.create_dataset("NSP1", (1,), dtype=np.dtype("i4"))
+            name = "NSP1"
+            _type = np.dtype("i4")
+            nsp1 = grp.create_dataset(name, (1,), dtype=_type)
             nsp1[0] = self.time_channel.num_spectra.value
             
-            ntc1 = grp.create_dataset("NTC1", (1,), dtype=np.dtype("i4"))
+            name = "NTC1"
+            _type = np.dtype("i4")
+            ntc1 = grp.create_dataset(name, (1,), dtype=_type)
             ntc1[0] = self.time_channel.num_time_channels
             
             # Unable to find equivalent in .raw
-            grp.create_dataset("NTLL", (1,), dtype=np.dtype("i4"))
+            name = "NTLL"
+            _type = np.dtype("i4")
+            grp.create_dataset(name, (1,), dtype=_type)
             
-            ntrg = grp.create_dataset("NTRG", (1,), dtype=np.dtype("i4"))
+            name = "NTRG"
+            _type = np.dtype("i4")
+            ntrg = grp.create_dataset(name, (1,), dtype=_type)
             ntrg[0] = self.time_channel.num_time_regimes.value
             
-            nuse = grp.create_dataset("NUSE", (1,), dtype=np.dtype("i4"))
+            name = "NUSE"
+            _type = np.dtype("i4")
+            nuse = grp.create_dataset(name, (1,), dtype=_type)
             nuse[0] = self.instrument.num_user_tables.value
             
-            pmap = grp.create_dataset("PMAP", (1,len(self.time_channel.period_num_per_period)), dtype=np.dtype("i4"))
+            name = "PMAP"
+            shape = (1,len(self.time_channel.period_num_per_period))
+            _type = dtype=np.dtype("i4")
+            pmap = grp.create_dataset(name, shape, _type)
             pmap[0] = self.time_channel.period_num_per_period[:]
             
-            pre1 = grp.create_dataset("PRE1", (1,), dtype=np.dtype("i4"))
+            name = "PRE1"
+            _type = np.dtype("i4")
+            pre1 = grp.create_dataset(name, (1,), dtype=_type)
             pre1[0] = self.time_channel.prescale.value
             
-            rrpb = grp.create_dataset("RRPB", (32,), dtype=np.dtype("f4"))
+            name = "RRPB"
+            _type = np.dtype("f4")
+            rrpb = grp.create_dataset(name, (32,), dtype=_type)
             extract_struct_to_arr(self.run.params, rrpb)
             
-            rspb = grp.create_dataset("RSPB", (64,), dtype=np.dtype("f4"))
+            name = "RSPB"
+            _type = np.dtype("f4")
+            rspb = grp.create_dataset(name, (64,), dtype=_type)
             extract_struct_to_arr(self.sample.params, rspb)
             
-            run = grp.create_dataset("RUN", (1,), dtype=np.dtype("i4"))
+            name = "RUN"
+            _type = np.dtype("i4")
+            run = grp.create_dataset(name, (1,), dtype=_type)
             run[0] = self.summary.header.run_number
             
-            rvpb = grp.create_dataset("RVPB", (64,), dtype=np.dtype("f4"))
+            name = "RVPB"
+            _type = np.dtype("f4")
+            rvpb = grp.create_dataset(name, (64,), dtype=_type)
             extract_struct_to_arr(self.run.params, rvpb)
             
-            spb = grp.create_dataset("SPB", (64,), dtype=np.dtype("i4"))
+            name = "SPB"
+            _type = np.dtype("i4")
+            spb = grp.create_dataset(name, (64,), dtype=_type)
             extract_struct_to_arr(self.sample.params, spb)
             
-            spec = grp.create_dataset("SPEC", (len(self.instrument.spectrum_number_table[:]),), dtype=np.dtype("i4"))
+            name = "SPEC"
+            shape = (len(self.instrument.spectrum_number_table[:]),)
+            _type = np.dtype("i4")
+            spec = grp.create_dataset(name, shape, dtype=_type)
             spec[:] = self.instrument.spectrum_number_table[:]
             
-            tcm1 = grp.create_dataset("TCM1", (5,), dtype=np.dtype("i4"))
+            name = "TCM1"
+            _type = np.dtype("i4")
+            tcm1 = grp.create_dataset(name, (5,), dtype=_type)
             tcm1[:] = self.time_channel.mode[:]
             
-            tcp1 = grp.create_dataset("TCP1", (20,), dtype=np.dtype("f4"))
+            name = "TCP1"
+            _type = np.dtype("f4")
+            tcp1 = grp.create_dataset(name, (20,), dtype=_type)
             extract_struct_to_arr(self.time_channel.params, tcp1)
             
-            timr = grp.create_dataset("TIMR", (len(self.dae.detector_time_regimes[:]),), dtype=np.dtype("f4"))
+            name = "TIMR"
+            shape = (len(self.dae.detector_time_regimes[:]),)
+            _type = np.dtype("f4")
+            timr = grp.create_dataset(name, shape, dtype=_type)
             timr[:] = self.dae.detector_time_regimes[:]
             
-            titl = grp.create_dataset("TITL", (1,), dtype=np.dtype("S80"))
+            name = "TITL"
+            _type = np.dtype("S80")
+            titl = grp.create_dataset(name, (1,), dtype=_type)
             titl[:] = self.run.title[:]
             
-            tthe = grp.create_dataset("TTHE", (len(self.instrument.two_theta),), dtype=np.dtype("f4"))
+            name = "TTHE"
+            shape = (len(self.instrument.two_theta),)
+            _type = np.dtype("f4")
+            tthe = grp.create_dataset(name, shape, dtype=_type)
             tthe[:] = self.instrument.two_theta[:]
             
-            udet = grp.create_dataset("UDET", (len(self.dae.detector_user_nums),), dtype=np.dtype("f4"))
+            name = "UDET"
+            shape = (len(self.dae.detector_user_nums),)
+            _type = np.dtype("f4")
+            udet = grp.create_dataset(name, shape, dtype=_type)
             udet[:] = self.dae.detector_user_nums[:]
             
-            ulen= grp.create_dataset("ULEN", (1,), dtype=np.dtype("i4"))
+            name = "ULEN"
+            _type = np.dtype("i4")
+            ulen= grp.create_dataset(name, (1,), dtype=_type)
             ulen[0] = self.user.length
             
-            user = grp.create_dataset("USER", (1,), dtype=np.dtype("S160"))
+            name = "USER"
+            _type = np.dtype("S160")
+            user = grp.create_dataset(name, (1,), dtype=_type)
             user[0] = self.run.user
             
-            ver1 = grp.create_dataset("VER1", (1,), dtype=np.dtype("i4"))
+            name = "VER1"
+            _type = np.dtype("i4")
+            ver1 = grp.create_dataset(name, (1,), dtype=_type)
             ver1[0] = self.summary.format_version.value
             
-            ver2 = grp.create_dataset("VER2", (1,), dtype=np.dtype("i4"))
+            name = "VER2"
+            _type = np.dtype("i4")
+            ver2 = grp.create_dataset(name, (1,), dtype=_type)
             ver2[0] = self.run.version.value
             
-            ver3 = grp.create_dataset("VER3", (1,), dtype=np.dtype("i4"))
+            name = "VER3"
+            _type = np.dtype("i4")
+            ver3 = grp.create_dataset(name, (1,), dtype=_type)
             ver3[0] = self.instrument.version.value
 
-            ver4 = grp.create_dataset("VER4", (1,), dtype=np.dtype("i4"))
+            name = "VER4"
+            _type = np.dtype("i4")
+            ver4 = grp.create_dataset(name, (1,), dtype=_type)
             ver4[0] = self.sample.env_version.value
             
-            ver5 = grp.create_dataset("VER5", (1,), dtype=np.dtype("i4"))
+            name = "VER5"
+            _type = np.dtype("i4")
+            ver5 = grp.create_dataset(name, (1,), dtype=_type)
             ver5[0] = self.dae.version.value
             
-            ver6 = grp.create_dataset("VER6", (1,), dtype=np.dtype("i4"))
+            name = "VER6"
+            _type = np.dtype("i4")
+            ver6 = grp.create_dataset(name, (1,), dtype=_type)
             ver6[0] = self.summary.format_version.value
             
-            ver7 = grp.create_dataset("VER7", (1,), dtype=np.dtype("i4"))
+            name = "VER7"
+            _type = np.dtype("i4")
+            ver7 = grp.create_dataset(name, (1,), dtype=_type)
             ver7[0] = self.time_channel.version.value
             
-            ver8 = grp.create_dataset("VER8", (1,), dtype=np.dtype("i4"))
+            name = "VER8"
+            _type = np.dtype("i4")
+            ver8 = grp.create_dataset(name, (1,), dtype=_type)
             ver8[0] = self.data.version.value
             
-            ver9 = grp.create_dataset("VER9", (1,), dtype=np.dtype("i4"))
+            name = "VER9"
+            _type = np.dtype("i4")
+            ver9 = grp.create_dataset(name, (1,), dtype=_type)
             ver9[0] = self.log.version[0].value
             
         def load_measurement(nxs_file):
