@@ -429,17 +429,6 @@ class IsisRawReader:
         
         self.read_into_buffer(self.instrument.spectrum_number_table)
 
-        """
-        NOTE:
-        The .raw spectrum_number_table is inconsistent with the .nxs
-        detector_1/spectrum_index. 
-        The former gives a 1D array from the top right of each detector
-        moving down each column (i.e for 64x64 detector [64,63,..]).
-        The .nxs index just gives [i for i in range(num pixels)].
-        When visualising both give the same laue plots, consistent with
-        SXD2001 only when using the indexing for a 64x64 detector:
-        np.arange(min_pixel_idx_range, max_pixel_idx_range).reshape(64,64).T
-        """
 
         self.read_into_buffer(self.instrument.hold_off_table)
         self.read_into_buffer(self.instrument.L2_table)
@@ -512,6 +501,12 @@ class IsisRawReader:
                                             self.summary.format_version)
         self.time_channel.boundaries = (c_float * len(boundaries_lst))(*boundaries_lst)
         
+    def get_counts_per_pixel(self, num_detectors, num_channels):
+
+        raw_shape = (1, num_detectors, num_channels)
+        raw_data = self.data.compressed_data[:]
+        return np.array(raw_data).reshape(raw_shape)
+
     def read_user_info(self):
         self.read_into_buffer(self.user.version)
         
@@ -596,14 +591,15 @@ class IsisRawReader:
                     for field_name, field_type in elem._fields_:
                         print(field_name, getattr(elem, field_name))
             except AttributeError:
-                print("Cannot read data_struct (can only print ctypes Structure instances)")
+                print("Cannot read data_struct (can only print ctypes Structures)")
 
 
 
     def output_tofraw_file(self, output_filename):
         
         """
-        Converts info in memory to TOFRaw NeXus format and outputs to output_filename.
+        Converts info in memory to TOFRaw NeXus format 
+        and outputs to output_filename.
         
         The NeXus format used here follows the guide here: 
         https://www.nexusformat.org/TOFRaw.html
@@ -611,36 +607,68 @@ class IsisRawReader:
         """
         
         def load_beamline(nxs_file):
-            beamline = nxs_file.create_dataset("raw_data_1/beamline", (1,), dtype='|S3')
+            name = "raw_data_1/beamline"
+            beamline = nxs_file.create_dataset(name, (1,), dtype='|S3')
             beamline[0] = self.summary.header.instrument_name
             
         def load_collection_time(nxs_file):
-            collection_time = nxs_file.create_dataset("raw_data_1/collection_time", (1,), dtype=np.dtype("f4"))
+            name = "raw_data_1/collection_time"
+            _type = np.dtype("f4")
+            collection_time = nxs_file.create_dataset(name, (1,), dtype=_type)
             collection_time[0] = self.run.params.run_duration
             
         def load_definition(nxs_file):
-            definition = nxs_file.create_dataset("raw_data_1/definition", (1,), dtype='|S6')
+            name = "raw_data_1/definition"
+            definition = nxs_file.create_dataset(name, (1,), dtype='|S6')
             definition[0] = b'TOFRAW'
             
         def load_definition_local(nxs_file):
-            definition_local = nxs_file.create_dataset("raw_data_1/definition_local", (1,), dtype='|S10')
+            name = "raw_data_1/definition_local"
+            definition_local = nxs_file.create_dataset(name, (1,), dtype='|S10')
             definition_local[0] = b'ISISTOFRAW'
             
         def load_detector_1(nxs_file, num_detectors, num_channels):
             
             grp = nxs_file.create_group("raw_data_1/detector_1")
-            counts = grp.create_dataset("counts", (1, num_detectors + 1, num_channels), dtype=np.dtype("i4"))
-            counts[0] = np.array(self.data.compressed_data[:]).reshape(1, num_detectors + 1 , num_channels)
-            counts[0] = counts[0][:, 1:45101, 1:]
+
+            name = "counts"
+            # 1D raw counts need reshaping per pixel with
+            # monitor channels removed to be consistent with .nxs
+            raw_data = self.get_counts_per_pixel(num_detectors, num_channels)
+            raw_shape = raw_data.shape
+            nxs_shape = (raw_shape[0], raw_shape[1] - 5, raw_shape[2] - 1)
+            _type = np.dtype("i4")
+            counts = grp.create_dataset(name, nxs_shape, dtype=_type)
+            counts[0] = raw_data[:, 1:-4, 1:]
             
-            period_idx = grp.create_dataset("period_index", (1,), dtype=np.dtype("i4"))
+            name = "period_index"
+            _type = np.dtype("i4")
+            period_idx = grp.create_dataset(name, (1,), dtype=_type)
             period_idx[0] = self.time_channel.num_periods
             
-            spectrum_idx = grp.create_dataset("spectrum_index", (num_detectors,), dtype=np.dtype("i4"))
+            """
+            NOTE:
+            The .raw spectrum_number_table is inconsistent with the .nxs
+            detector_1/spectrum_index. 
+            The former gives a 1D array from the top right of each detector
+            moving down each column (i.e for 64x64 detector [64,63,..]).
+            The .nxs index just gives [i for i in range(num pixels)].
+            When visualising both give the same laue plots, consistent with
+            SXD2001 only when using the indexing e.g. for a 64x64 detector:
+            np.arange(min_pixel_idx_range, max_pixel_idx_range).reshape(64,64).T
+            """
+
+            name = "spectrum_index"
+            shape = (num_detectors - 1,)
+            _type = np.dtype("i4")
+            spectrum_idx = grp.create_dataset(name, shape, dtype=_type)
             spectrum_idx[:] = self.instrument.spectrum_number_table[:]
             
-            tof = grp.create_dataset("time_of_flight", (num_channels,), dtype=np.dtype("f4"))
-            tof[0] = self.time_channel.boundaries[:] 
+            name = "time_of_flight"
+            shape = (num_channels,)
+            _type = np.dtype("f4")
+            tof = grp.create_dataset(name, shape, dtype=_type)
+            tof[:] = np.array(self.time_channel.boundaries[:])
             
         def load_duration(nxs_file):
             duration = nxs_file.create_dataset("raw_data_1/duration", (1,), dtype=np.dtype("f4"))
@@ -748,9 +776,7 @@ class IsisRawReader:
             # detector_1 group within instrument group for some reason contains duplicates of the detector_1
             # group above..
             d1_grp = inst_grp.create_group("detector_1")
-            d1_counts = d1_grp.create_dataset("counts", (1,self.instrument.num_detectors+1,
-                                                        self.time_channel.num_time_channels+1), dtype=np.dtype("f4"))
-            d1_counts[:] = nxs_file['raw_data_1']['detector_1']['counts'][:]
+            d1_grp["counts"] = nxs_file['raw_data_1']['detector_1']['counts']
             
             d1_delt = d1_grp.create_dataset("delt", (len(self.instrument.hold_off_table),), dtype=np.dtype("f4"))
             d1_delt[:] = self.instrument.hold_off_table[:]
@@ -999,14 +1025,14 @@ class IsisRawReader:
         def load_measurement_type(nxs_file):
             nxs_file["raw_data_1/measurement_type"] = nxs_file["raw_data_1/measurement/label"]
 
-        def load_monitor(nxs_file, monitor_num):
+        def load_monitor(nxs_file, monitor_num, raw_data):
             
             grp = nxs_file.create_group("raw_data_1/monitor_" + str(monitor_num))
             
             data = grp.create_dataset("data", (1,1, 
                                             self.time_channel.num_time_channels+1), 
                                     dtype=np.dtype("i4"))
-            data[0,0,:] = nxs_file["raw_data_1"]["detector_1"]["counts"][0][self.instrument.monitor_detector_number[monitor_num]][:]
+            data[0,0,:] = raw_data[0][self.instrument.monitor_detector_number[monitor_num]][:]
             
             # Unable to find equivalent in .raw
             grp.create_dataset("period_index", (1,), dtype=np.dtype("i4"))
@@ -1170,12 +1196,14 @@ class IsisRawReader:
             raise IOError("{} already exists.".format(output_filename))
         
         nxs_file = h5py.File(output_filename, "a")
+        num_detectors = self.instrument.num_detectors
+        num_time_channels = self.time_channel.num_time_channels
         
         load_beamline(nxs_file)
         load_collection_time(nxs_file)
         load_definition(nxs_file)
         load_definition_local(nxs_file)
-        load_detector_1(nxs_file, self.instrument.num_detectors, self.time_channel.num_time_channels+1)
+        load_detector_1(nxs_file, num_detectors + 1, num_time_channels + 1)
         load_duration(nxs_file)
         load_end_time(nxs_file)
         load_experiment_identifier(nxs_file)
@@ -1189,9 +1217,11 @@ class IsisRawReader:
         load_measurement_label(nxs_file)
         load_measurement_subid(nxs_file)
         load_measurement_type(nxs_file)
-        load_monitor(nxs_file, 1)
-        load_monitor(nxs_file, 2)
-        load_monitor(nxs_file, 3)
+        
+        raw_data = self.get_counts_per_pixel(num_detectors + 1, num_time_channels + 1)
+        load_monitor(nxs_file, 1, raw_data)
+        load_monitor(nxs_file, 2, raw_data)
+        load_monitor(nxs_file, 3, raw_data)
         load_unsaved_monitor_events(nxs_file)
         load_name(nxs_file)
         load_notes(nxs_file)
