@@ -671,7 +671,9 @@ class IsisRawReader:
             tof[:] = np.array(self.time_channel.boundaries[:])
             
         def load_duration(nxs_file):
-            duration = nxs_file.create_dataset("raw_data_1/duration", (1,), dtype=np.dtype("f4"))
+            name = "raw_data_1/duration"
+            _type = np.dtype("f4")
+            duration = nxs_file.create_dataset(name, (1,), dtype=_type)
             duration[0] = self.run.params.run_duration
             
         def convert_to_nxs_date(raw_date):
@@ -685,21 +687,24 @@ class IsisRawReader:
             return "-".join([year, date_dict[month], day])
             
         def load_end_time(nxs_file):
-            
-            end_time = nxs_file.create_dataset("raw_data_1/end_time", (1,), dtype="|S19")
+            name = "raw_data_1/end_time"
+            end_time = nxs_file.create_dataset(name, (1,), dtype="|S19")
             raw_date = convert_to_nxs_date(self.run.params.end_date)
             raw_time = self.run.params.end_time.decode()
             end_time[0] = (raw_date + "T" + raw_time).encode()
             
         def load_experiment_identifier(nxs_file):
-            exp_identifier = nxs_file.create_dataset("raw_data_1/experiment_identifier", (1,), dtype="|S7")
+            name = "raw_data_1/experiment_identifier"
+            exp_identifier = nxs_file.create_dataset(name, (1,), dtype="|S7")
             exp_identifier[0] = str(self.run.params.proposal_num).encode()
             
         def load_frame_log(nxs_file):
             nxs_file.create_group("raw_data_1/framelog")
             
         def load_good_frames(nxs_file):
-            good_frames = nxs_file.create_dataset("raw_data_1/good_frames", (1,), dtype=np.dtype("i4"))
+            name = "raw_data_1/good_frames"
+            _type = np.dtype("i4")
+            good_frames = nxs_file.create_dataset(name, (1,), dtype=_type)
             good_frames[0] = self.run.params.good_frames
             
         def load_instrument(nxs_file):

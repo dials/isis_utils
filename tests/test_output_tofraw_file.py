@@ -40,3 +40,25 @@ def test_load_detector_1_time_of_flight(nacl_nxs, nacl_gen_nxs):
     expected_val = nacl_nxs['raw_data_1']['detector_1']['time_of_flight'][:]
     assert(gen_val.shape == expected_val.shape)
     assert(np.allclose(gen_val, expected_val, atol=1E-2))
+
+def test_load_duration(nacl_nxs, nacl_gen_nxs):
+    gen_val = nacl_gen_nxs['raw_data_1']['duration'][:]
+    expected_val = nacl_nxs['raw_data_1']['duration'][:]
+    assert(gen_val == expected_val)
+
+def test_load_end_time(nacl_nxs, nacl_gen_nxs):
+    gen_val = nacl_gen_nxs['raw_data_1']['end_time'][:]
+    expected_val = nacl_nxs['raw_data_1']['end_time'][:]
+    assert(gen_val == expected_val)
+
+def test_load_end_time(nacl_nxs, nacl_gen_nxs):
+    gen_val = nacl_gen_nxs['raw_data_1']['experiment_identifier'][:]
+    expected_val = nacl_nxs['raw_data_1']['experiment_identifier'][:]
+    assert(gen_val == expected_val)
+
+# framelog is empty in observed TOFRAW files and so is not tested
+
+def test_load_end_time(nacl_nxs, nacl_gen_nxs):
+    gen_val = nacl_gen_nxs['raw_data_1']['good_frames'][:]
+    expected_val = nacl_nxs['raw_data_1']['good_frames'][:]
+    assert(gen_val == expected_val)
