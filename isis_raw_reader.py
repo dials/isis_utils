@@ -816,38 +816,50 @@ class IsisRawReader:
             d1_grp = inst_grp.create_group("detector_1")
             d1_grp["counts"] = nxs_file['raw_data_1']['detector_1']['counts']
             
-            d1_delt = d1_grp.create_dataset("delt", (len(self.instrument.hold_off_table),), dtype=np.dtype("f4"))
-            d1_delt[:] = self.instrument.hold_off_table[:]
+            name = "delt"
+            shape = (len(self.instrument.hold_off_table[:-4]),)
+            _type = np.dtype("f4")
+            d1_delt = d1_grp.create_dataset(name, shape, dtype=_type)
+            d1_delt[:] = self.instrument.hold_off_table[:-4]
             
-            d1_L2 = d1_grp.create_dataset("distance", (len(self.instrument.L2_table),), dtype=np.dtype("f4"))
-            d1_L2[:] = self.instrument.L2_table[:]
+            name = "distance"
+            shape = (len(self.instrument.L2_table[:-4]),)
+            _type = np.dtype("f4")
+            d1_L2 = d1_grp.create_dataset(name, shape,  dtype=_type)
+            d1_L2[:] = self.instrument.L2_table[:-4]
             
             # From .nxs examples, looks to be a sum of the longitude angles
             # See https://www.nexusformat.org/TOFRaw.html
-            d1_polar_angle = d1_grp.create_dataset("polar_angle", (len(self.instrument.two_theta),), dtype=np.dtype("f4"))
-            d1_polar_angle[:] = self.instrument.two_theta[:]
+            name = "polar_angle"
+            shape = (len(self.instrument.two_theta) - 4,)
+            _type = np.dtype("f4")
+            d1_polar_angle = d1_grp.create_dataset(name, shape, dtype=_type)
+            d1_polar_angle[:] = self.instrument.two_theta[:-4]
             
-            d1_detector_dist = d1_grp.create_dataset("source_detector_distance", (1,), dtype=np.dtype("f4"))
+            name = "source_detector_distance"
+            _type = np.dtype("f4")
+            d1_detector_dist = d1_grp.create_dataset(name, (1,), dtype=_type)
             d1_detector_dist[0] = self.instrument.params.LOQ_souce_detector_distance
             
-            d1_spectrum_idx = d1_grp.create_dataset("spectrum_index", (len(self.instrument.spectrum_number_table),), dtype=np.dtype("i4"))
-            d1_spectrum_idx[:] = nxs_file['raw_data_1']['detector_1']['spectrum_index'][:]
+            name = "spectrum_index"
+            d1_grp[name] = nxs_file['raw_data_1']['detector_1']['spectrum_index'][:]
             
-            d1_tof = d1_grp.create_dataset("time_of_flight", (len(self.time_channel.boundaries[:]),), dtype=np.dtype("f4"))
-            d1_tof[:] = self.time_channel.boundaries[:]
-            d1_tof_raw = d1_grp.create_dataset("time_of_flight_raw", 
-                                            (len(self.time_channel.raw_boundaries[:]),), 
-                                            dtype=np.dtype("f4"))
-            d1_tof_raw[:] = self.time_channel.raw_boundaries[:]
+            name = "time_of_flight"
+            d1_grp[name] = nxs_file["raw_data_1"]["detector_1"]["time_of_flight"]
             
+            name = "time_of_flight_raw"
+            d1_grp[name] = nxs_file["raw_data_1"]["detector_1"]["time_of_flight_raw"]
             
             moderator_grp = inst_grp.create_group("moderator")
             
             # Unable to find equivalent in .raw
-            m_distance = moderator_grp.create_dataset("distance", (1,), dtype=np.dtype("f4"))
-            m_distance[0] = 0.0
+            name = "distance"
+            _type = np.dtype("f4")
+            m_distance = moderator_grp.create_dataset(name, (1,), dtype=_type)
             
-            m_name = inst_grp.create_dataset("name", (1,), dtype=np.dtype("S3"))
+            name = "name"
+            _type = np.dtype("S3")
+            m_name = inst_grp.create_dataset(name, (1,), dtype=_type)
             m_name[0] = self.summary.header.instrument_name
             
             # Unable to find equivalent in .raw

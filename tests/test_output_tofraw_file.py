@@ -6,29 +6,38 @@ import numpy as np
 The following params are not tested 
 as an equivalent in .raw was not found:
 
-instrument/dae/vetos/fermi_chopper3
-instrument/dae/vetos/fifo
-instrument/dae/vetos/msmode
-instrument/dae/vetos/writing_table_file
-instrument/detector_table_file
-instrument/spectra_table_file
-instrument/dae/type
-instrument/dae/vetos/ISIS_50Hz
-instrument/dae/vetos/TS2_pulse
-instrument/dae/vetos/ext2
-instrument/dae/vetos/ext3
+raw_data_1/instrument/dae/vetos/fermi_chopper3
+raw_data_1/instrument/dae/vetos/fifo
+raw_data_1/instrument/dae/vetos/msmode
+raw_data_1/instrument/dae/vetos/writing_table_file
+raw_data_1/instrument/detector_table_file
+raw_data_1/instrument/spectra_table_file
+raw_data_1/instrument/dae/type
+raw_data_1/instrument/dae/vetos/ISIS_50Hz
+raw_data_1/instrument/dae/vetos/TS2_pulse
+raw_data_1/instrument/dae/vetos/ext2
+raw_data_1/instrument/dae/vetos/ext3
+raw_data_1/instrument/moderator/distance
+"raw_data_1/instrument/source/name"
+"raw_data_1/instrument/source/probe"
+"raw_data_1/instrument/source/type"
 
 The following params are not tested
 as they are hard links to other params:
 
-instrument/detector_1/counts
-instrument/dae/time_channels_1/time_of_flight
+raw_data_1/instrument/detector_1/counts
+raw_data_1/instrument/dae/time_channels_1/time_of_flight
+raw_data_1/instrument/detector_1/spectrum_index
+raw_data_1/instrument/detector_1/time_of_flight
+raw_data_1/instrument/detector_1/time_of_flight_raw
 
 The following params are not tested due to 
 known inconsistencies between file formats:
 
 detector_1/spectrum_index
-framelog
+raw_data_1/framelog
+raw_data_1/instrument/detector_1/distance
+raw_data_1/instrument/detector_1/polar_angle
 
 """
 
@@ -49,6 +58,9 @@ framelog
 "raw_data_1/instrument/dae/vetos/fermi_chopper_1",
 "raw_data_1/instrument/dae/vetos/fermi_chopper_2",
 "raw_data_1/instrument/dae/vetos/smp",
+"raw_data_1/instrument/detector_1/source_detector_distance",
+"raw_data_1/instrument/name",
+
 ])
 def test_same_value(nacl_nxs, nacl_gen_nxs, path):
     gen_val = nacl_gen_nxs[path][:]
@@ -59,6 +71,8 @@ def test_same_value(nacl_nxs, nacl_gen_nxs, path):
 [("raw_data_1/detector_1/counts", 1E-3),
 ("raw_data_1/detector_1/time_of_flight", 1E-2),
 ("raw_data_1/instrument/dae/time_channels_1/time_of_flight_raw", 100),
+("raw_data_1/instrument/detector_1/delt", 1E-3),
+
 ])
 def test_same_array(nacl_nxs, nacl_gen_nxs, path, atol):
     gen_val = nacl_gen_nxs[path][:]
