@@ -1183,92 +1183,141 @@ class IsisRawReader:
             grp.create_dataset("type", (1,), dtype=np.dtype("S1"))
 
         def load_measurement_first_run(nxs_file):
-            nxs_file["raw_data_1/measurement_first_run"] = nxs_file["raw_data_1/measurement/first_run"]
+            path = "raw_data_1/measurement_first_run"
+            link_path = "raw_data_1/measurement/first_run"
+            nxs_file[path] = nxs_file[link_path]
     
         def load_measurement_id(nxs_file):
-            nxs_file["raw_data_1/measurement_id"] = nxs_file["raw_data_1/measurement/id"]
+            path = "raw_data_1/measurement_id"
+            link_path = "raw_data_1/measurement/id"
+            nxs_file[path] = nxs_file[link_path]
     
         def load_measurement_label(nxs_file):
-            nxs_file["raw_data_1/measurement_label"] = nxs_file["raw_data_1/measurement/label"]
+            path = "raw_data_1/measurement_label"
+            link_path = "raw_data_1/measurement/label"
+            nxs_file[path] = nxs_file[link_path]
     
         def load_measurement_subid(nxs_file):
-            nxs_file["raw_data_1/measurement_subid"] = nxs_file["raw_data_1/measurement/subid"]
+            path = "raw_data_1/measurement_subid"
+            link_path = "raw_data_1/measurement/subid"
+            nxs_file[path] = nxs_file[link_path]
 
         def load_measurement_type(nxs_file):
-            nxs_file["raw_data_1/measurement_type"] = nxs_file["raw_data_1/measurement/label"]
+            path = "raw_data_1/measurement_type"
+            link_path = "raw_data_1/measurement/label"
+            nxs_file[path] = nxs_file[link_path]
 
         def load_monitor(nxs_file, monitor_num, raw_data):
             
             grp = nxs_file.create_group("raw_data_1/monitor_" + str(monitor_num))
-            
-            data = grp.create_dataset("data", (1,1, 
-                                            self.time_channel.num_time_channels+1), 
-                                    dtype=np.dtype("i4"))
-            data[0,0,:] = raw_data[0][self.instrument.monitor_detector_number[monitor_num]][:]
+            monitor_idx = self.instrument.monitor_detector_number[monitor_num]
+
+            name = "data"            
+            shape = (1,1,self.time_channel.num_time_channels+1)
+            _type = np.dtype("i4")
+            data = grp.create_dataset(name, shape, dtype=_type)
+            data[0,0,:] = raw_data[0][monitor_idx][:]
             
             # Unable to find equivalent in .raw
-            grp.create_dataset("period_index", (1,), dtype=np.dtype("i4"))
+            name = "period_index"
+            _type = np.dtype("i4")
+            grp.create_dataset(name, (1,), dtype=_type)
             
-            spectrum_idx = grp.create_dataset("spectrum_index", (1,), dtype=np.dtype("i4"))
-            spectrum_idx[0] = self.instrument.monitor_detector_number[monitor_num]
-            
-            tof = grp.create_dataset("time_of_flight", (self.time_channel.num_time_channels+1,),
-                                    dtype=np.dtype("f4"))
+            name = "spectrum_index"
+            _type = np.dtype("i4")
+            spectrum_idx = grp.create_dataset(name, (1,), dtype=_type)
+            spectrum_idx[0] = monitor_idx 
+
+            name = "time_of_flight"
+            shape = (self.time_channel.num_time_channels+1,)
+            _type = np.dtype("f4")
+            tof = grp.create_dataset(name, shape, dtype=_type)
             tof[:] = self.time_channel.boundaries[:]
             
         def load_unsaved_monitor_events(nxs_file):
             # Unable to find equivalent in .raw
-            nxs_file.create_dataset("raw_data_1/monitor_events_not_saved", (1,), dtype=np.dtype("i8"))
-
+            name = "raw_data_1/monitor_events_not_saved"
+            _type = np.dtype("i8")
+            nxs_file.create_dataset(name, (1,), dtype=_type)
             
         def load_name(nxs_file):
-            name = nxs_file.create_dataset("raw_data_1/name", (1,), dtype=np.dtype("|S3"))
+            _name = "raw_data_1/name"
+            _type = np.dtype("|S3")
+            name = nxs_file.create_dataset(_name, (1,), dtype=_type)
             name[0] = self.summary.header.instrument_name
 
         def load_notes(nxs_file):
+            name = "raw_data_1/notes"
+            _type = np.dtype("S1")
             # Unable to find equivalent in .raw
-            nxs_file.create_dataset("raw_data_1/notes", (1,), dtype=np.dtype("S1"))
+            nxs_file.create_dataset(name, (1,), dtype=_type)
             
         def load_periods(nxs_file):
             grp = nxs_file.create_group("raw_data_1/periods")
             
-            frames_req = grp.create_dataset("frames_requested", (1,), dtype=np.dtype("i4"))
+            name = "frames_requested"
+            _type = np.dtype("i4")
+            frames_req = grp.create_dataset(name, (1,), dtype=_type)
             frames_req[0] = self.run.params.requested_duration
             
-            good_frames = grp.create_dataset("good_frames", (1,), dtype=np.dtype("i4"))
+            name = "good_frames"
+            _type = np.dtype("i4")
+            good_frames = grp.create_dataset(name, (1,), dtype=_type)
             good_frames[0] = self.run.params.good_frames
             
             # Unable to find equivalent in .raw
-            grp.create_dataset("good_frames_daq", (1,), dtype=np.dtype("i4"))
+            name = "good_frames_daq"
+            _type = np.dtype("i4")
+            grp.create_dataset(name, (1,), dtype=_type)
         
             # Unable to find equivalent in .raw
-            grp.create_dataset("highest_used", (1,), dtype=np.dtype("i4"))
+            name = "highest_used"
+            _type = np.dtype("i4")
+            grp.create_dataset(name, (1,), dtype=_type)
             
             # Unable to find equivalent in .raw
-            grp.create_dataset("labels", (1,), dtype=np.dtype("S8"))
+            name = "labels"
+            _type =  np.dtype("S8")
+            grp.create_dataset(name, (1,), dtype=_type)
             
-            number = grp.create_dataset("numbers", (1,), dtype=np.dtype("i4"))
+            name = "number"
+            _type = np.dtype("i4")
+            number = grp.create_dataset(name, (1,), dtype=_type)
             number[0] = self.time_channel.num_periods.value
             
             # Unable to find equivalent in .raw
-            grp.create_dataset("output", (1,), dtype=np.dtype("i4"))  
+            name = "output"
+            _type = np.dtype("i4")
+            grp.create_dataset(name, (1,), dtype=_type)  
             
-            proton_charge = grp.create_dataset("proton_charge", (1,), dtype=np.dtype("f4"))
+            name = "proton_charge"
+            _type = np.dtype("f4")
+            proton_charge = grp.create_dataset(name, (1,), dtype=_type)
             proton_charge[0] = self.run.params.good_proton_charge
             
-            proton_charge_raw = grp.create_dataset("proton_charge_raw", (1,), dtype=np.dtype("f4"))
+            name = "proton_charge_raw"
+            _type = np.dtype("f4")
+            proton_charge_raw = grp.create_dataset(name, (1,), dtype=_type)
             proton_charge_raw[0] = self.run.params.total_proton_charge
             
-            raw_frames = grp.create_dataset("raw_frames", (1,), dtype=np.dtype("i4"))
+            name = "raw_frames"
+            _type = np.dtype("i4")
+            raw_frames = grp.create_dataset(name, (1,), dtype=_type)
             raw_frames[0] = self.run.params.raw_frames
             
             # Unable to find equivalent in .raw
-            grp.create_dataset("sequences", (1,), dtype=np.dtype("i4")) 
+            name = "sequences"
+            _type = np.dtype("i4")
+            grp.create_dataset(name, (1,), dtype=_type) 
             
             # Unable to find equivalent in .raw
-            grp.create_dataset("total_counts", (1,), dtype=np.dtype("f4")) 
+            name = "total_counts"
+            _type = np.dtype("f4")
+            grp.create_dataset(name, (1,), dtype=_type) 
             
-            mod_type = grp.create_dataset("type", (1,), dtype=np.dtype("i4"))
+            name = "type"
+            _type = np.dtype("i4")
+            mod_type = grp.create_dataset(name, (1,), dtype=_type)
             mod_type[0] = self.instrument.params.moderator_type
             
         def load_program_name(nxs_file):
