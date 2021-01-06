@@ -714,72 +714,105 @@ class IsisRawReader:
             dae_grp = nxs_file.create_group("raw_data_1/instrument/dae")
             
             # Unable to find equivalent in .raw 
-            dae_grp.create_dataset("detector_table_file", (1,), dtype="|S28")
-            
-            period_idx = dae_grp.create_dataset("period_index", (1,), dtype=np.dtype("i4"))
+            name = "detector_table_file"
+            dae_grp.create_dataset(name, (1,), dtype="|S28")
+           
+            name =  "period_index"
+            _type = np.dtype("i4")
+            period_idx = dae_grp.create_dataset(name, (1,), dtype=_type)
             period_idx[0] = self.time_channel.num_periods
             
             # Unable to find equivalent in .raw 
-            dae_grp.create_dataset("spectra_table_file", (1,), dtype=np.dtype("S35"))
+            name = "spectra_table_file"
+            _type = np.dtype("S35")
+            dae_grp.create_dataset(name, (1,), dtype=_type)
             
             tc1_grp = dae_grp.create_group("time_channels_1")
-            
-            tof = tc1_grp.create_dataset("time_of_flight", (len(self.time_channel.boundaries[:]),), dtype=np.dtype("f4"))
-            tof[:] = self.time_channel.boundaries[:]
-            tof_raw = tc1_grp.create_dataset("time_of_flight_raw", 
-                                            (len(self.time_channel.raw_boundaries[:]),), 
-                                            dtype=np.dtype("f4"))
-            tof_raw[:] = self.time_channel.raw_boundaries[:]
+           
+            name = "time_of_flight"
+            tc1_grp[name] = nxs_file["raw_data_1/detector_1/time_of_flight"]
+
+            name = "time_of_flight_raw"
+            shape = (len(self.time_channel.boundaries[:]),)
+            _type =  np.dtype("f4")
+            tof_raw = tc1_grp.create_dataset(name, shape, dtype=_type)
+            tof_raw[:] = np.array(self.time_channel.raw_boundaries[:]) * 31.25
             
             # Unable to find equivalent in .raw 
             dae_grp.create_dataset("type", (1,), dtype=np.dtype("f4"))
             
-            vetoes_grp = dae_grp.create_group("vetoes")
+            vetos_grp = dae_grp.create_group("vetos")
             
             # Unable to find equivalent in .raw 
-            vetoes_grp.create_dataset("ISIS_50Hz", (1,), dtype=np.dtype("i4"))
+            name = "ISIS_50Hz"
+            _type = np.dtype("i4")
+            vetos_grp.create_dataset(name, (1,), dtype=_type)
             
             # Unable to find equivalent in .raw 
-            vetoes_grp.create_dataset("TS2_pulse", (1,), dtype=np.dtype("i4"))
+            name = "TS2_pulse"
+            _type = np.dtype("i4")
+            vetos_grp.create_dataset(name, (1,), dtype=_type)
             
-            ext0 = vetoes_grp.create_dataset("ext0", (1,), dtype=np.dtype("i4"))
+            name = "ext0"
+            _type = np.dtype("i4")
+            ext0 = vetos_grp.create_dataset(name, (1,), dtype=_type)
             ext0[0] = self.dae.params.external_vetoes[0]
             
-            ext1 = vetoes_grp.create_dataset("ext1", (1,), dtype=np.dtype("i4"))
+            name = "ext1"
+            _type = np.dtype("i4")
+            ext1 = vetos_grp.create_dataset(name, (1,), dtype=_type)
             ext1[0] = self.dae.params.external_vetoes[1]
             
-            ext2 = vetoes_grp.create_dataset("ext2", (1,), dtype=np.dtype("i4"))
+            name = "ext2"
+            _type = np.dtype("i4")
+            ext2 = vetos_grp.create_dataset(name, (1,), dtype=_type)
             ext2[0] = self.dae.params.external_vetoes[2]
             
             # Unable to find equivalent in .raw 
-            vetoes_grp.create_dataset("ext3", (1,), dtype=np.dtype("i4"))
+            name = "ext3"
+            _type = np.dtype("i4")
+            vetos_grp.create_dataset(name, (1,), dtype=_type)
             
-            f_chopper_0 = vetoes_grp.create_dataset("fermi_chopper0", (1,), dtype=np.dtype("i4"))
+            name = "fermi_chopper0"
+            _type = np.dtype("i4")
+            f_chopper_0 = vetos_grp.create_dataset(name, (1,), dtype=_type)
             f_chopper_0[0] = self.instrument.params.chopper_freq_1
             
-            f_chopper_1 = vetoes_grp.create_dataset("fermi_chopper1", (1,), dtype=np.dtype("i4"))
+            name = "fermi_chopper1"
+            _type = np.dtype("i4")
+            f_chopper_1 = vetos_grp.create_dataset(name, (1,), dtype=_type)
             f_chopper_1[0] = self.instrument.params.chopper_freq_2
             
-            f_chopper_2 = vetoes_grp.create_dataset("fermi_chopper2", (1,), dtype=np.dtype("i4"))
+            name = "fermi_chopper2"
+            _type = np.dtype("i4")
+            f_chopper_2 = vetos_grp.create_dataset(name, (1,), dtype=_type)
             f_chopper_2[0] = self.instrument.params.chopper_freq_3
             
             # Unable to find equivalent in .raw 
-            vetoes_grp.create_dataset("fermi_chopper3", (1,), dtype=np.dtype("i4"))
+            name = "fermi_chopper3"
+            _type = np.dtype("i4")
+            vetos_grp.create_dataset(name, (1,), dtype=_type)
 
             # Unable to find equivalent in .raw 
-            vetoes_grp.create_dataset("fifo", (1,), dtype=np.dtype("i4"))
+            name = "fifo"
+            _type = np.dtype("i4")
+            vetos_grp.create_dataset(name, (1,), dtype=_type)
             
             # Unable to find equivalent in .raw      
-            vetoes_grp.create_dataset("msmode", (1,), dtype=np.dtype("i4"))
+            name = "msmode"
+            _type = np.dtype("i4")
+            vetos_grp.create_dataset(name, (1,), dtype=_type)
             
-            smp = vetoes_grp.create_dataset("smp", (1,), dtype=np.dtype("i4"))
+            name = "smp"
+            _type = np.dtype("i4")
+            smp = vetos_grp.create_dataset(name, (1,), dtype=_type)
             smp[0] = self.dae.params.secondary_master_pulse
             
             # Unable to find equivalent in .raw 
-            dae_grp.create_dataset("writing_table_file", (1,), dtype=np.dtype("S30"))
+            name = "writing_table_file"
+            _type = np.dtype("S30")
+            dae_grp.create_dataset(name, (1,), dtype=_type)
             
-            # detector_1 group within instrument group for some reason contains duplicates of the detector_1
-            # group above..
             d1_grp = inst_grp.create_group("detector_1")
             d1_grp["counts"] = nxs_file['raw_data_1']['detector_1']['counts']
             
