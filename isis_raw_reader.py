@@ -845,10 +845,12 @@ class IsisRawReader:
             d1_grp[name] = nxs_file['raw_data_1']['detector_1']['spectrum_index'][:]
             
             name = "time_of_flight"
-            d1_grp[name] = nxs_file["raw_data_1"]["detector_1"]["time_of_flight"]
+            nxs_path = "raw_data_1/detector_1/time_of_flight"
+            d1_grp[name] = nxs_file[nxs_path]
             
             name = "time_of_flight_raw"
-            d1_grp[name] = nxs_file["raw_data_1"]["detector_1"]["time_of_flight_raw"]
+            nxs_path = "raw_data_1/instrument/dae/time_channels_1/time_of_flight_raw"
+            d1_grp[name] = nxs_file[nxs_path]
             
             moderator_grp = inst_grp.create_group("moderator")
             

@@ -69,7 +69,7 @@ def test_same_value(nacl_nxs, nacl_gen_nxs, path):
 
 @pytest.mark.parameterize("path, atol",
 [("raw_data_1/detector_1/counts", 1E-3),
-("raw_data_1/detector_1/time_of_flight", 1E-2),
+("raw_data_1/detector_1/time_channels_1/time_of_flight", 1E-2),
 ("raw_data_1/instrument/dae/time_channels_1/time_of_flight_raw", 100),
 ("raw_data_1/instrument/detector_1/delt", 1E-3),
 
