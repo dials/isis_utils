@@ -151,8 +151,8 @@ def test_read_sample_info(nacl_raw_reader):
     assert(nacl_raw_reader.sample.environment[0].camac_offset == 0)
     assert(nacl_raw_reader.sample.environment[0].camac_register_group == 0)
     assert(nacl_raw_reader.sample.environment[0].pre_proc_routine_num == 0)
-    assert(nacl_raw_reader.sample.environment[0].camac_values[:] = [0, 0, 0, 0, 0, 0,
-                                                                     0, 0, 0, 0, 0, 0]
+    assert(nacl_raw_reader.sample.environment[0].camac_values[:] == [0, 0, 0, 0, 0, 0,
+                                                                     0, 0, 0, 0, 0, 0])
 
 
 def test_read_dae_info(nacl_raw_reader):
@@ -209,6 +209,13 @@ def test_read_user_info(nacl_raw_reader):
     assert(nacl_raw_reader.user.length == 1)
     assert(nacl_raw_reader.user.data[:] == pytest.approx([0.0]))
 
+def test_read_data_info(nacl_raw_reader):
+    assert(nacl_raw_reader.data.version.value == 2)
+    assert(nacl_raw_reader.data.data_header.compression_type == 1)
+    assert(nacl_raw_reader.data.data_header.spectrum_array_offset == 33)
+    assert(nacl_raw_reader.data.data_header.equiv_v1_filesize == 645584)
+    assert(len(nacl_raw_reader.data.ddes[:]) == 45105)
+    assert(len(nacl_raw_reader.data.compressed_data[:]) == 82181310)
 
-#def test_read_data_info(nacl_raw_reader)
-#def test_read_log_info(nacl_raw_reader)
+def test_read_log_info(nacl_raw_reader):
+    assert(nacl_raw_reader.log.version[:] == [2, 0])

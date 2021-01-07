@@ -3,6 +3,7 @@ import h5py
 from isis_raw_reader import IsisRawReader
 from os.path import join, isfile
 
+@pytest.fixture(scope="session")
 def nacl_raw_reader(dials_data):
 
     location = dials_data("isis_sxd_example_data")
