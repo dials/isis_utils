@@ -194,7 +194,18 @@ def test_read_dae_info(nacl_raw_reader):
     assert(len(nacl_raw_reader.dae.detector_time_regimes) == 45104)
     assert(len(nacl_raw_reader.dae.detector_user_nums) == 45104)
 
-#def test_read_time_channel_info(nacl_raw_reader)
+def test_read_time_channel_info(nacl_raw_reader):
+
+    assert(nacl_reader.time_channel.version == 1)
+    assert(nacl_reader.time_channel.num_time_channels == 1821)
+    assert(len(nacl_raw_reader.time_channel.params[:]) == 4)
+    assert(nacl_raw_reader.time_channel.num_spectra == 45104)
+    assert(len(nacl_raw_reader.time_channel.raw_boundaries[:]) == 1822)
+    assert(len(nacl_raw_reader.time_channel.boundaries[:]) == 1822)
+
+
+
+
 #def test_read_user_info(nacl_raw_reader)
 #def test_read_data_info(nacl_raw_reader)
 #def test_read_log_info(nacl_raw_reader)

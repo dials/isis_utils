@@ -468,8 +468,6 @@ class IsisRawReader:
                 boundaries.append(i * (prescale.value / 32.) + added_delay)
             return boundaries
 
-
-
         # The version buffer is not currectly defined
         # But in lieu of original documentation of the file structure
         # the hack below is necessary
