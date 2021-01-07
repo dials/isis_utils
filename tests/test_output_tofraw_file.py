@@ -1,12 +1,12 @@
-import pytest
+from os.path import isfile, join
+
 import h5py
-from isis_raw_reader import IsisRawReader
-from os.path import join, isfile
 import numpy as np
+import pytest
 
 """
 
-The following params are not tested 
+The following params are not tested
 as an equivalent in .raw was not found:
 
 raw_data_1/instrument/dae/vetos/fermi_chopper3
@@ -67,7 +67,7 @@ raw_data_1/proton_charge
 raw_data_1/proton_charge_raw
 raw_data_1/raw_frames
 
-The following params are not tested due to 
+The following params are not tested due to
 known inconsistencies between file formats:
 
 detector_1/spectrum_index
@@ -84,6 +84,7 @@ raw_data_1/title
 
 """
 
+
 @pytest.fixture(scope="session")
 def nacl_gen_nxs(nacl_raw_reader, tmpdir_factory):
 
@@ -92,59 +93,68 @@ def nacl_gen_nxs(nacl_raw_reader, tmpdir_factory):
 
     return h5py.File(nxs_filename, "r")
 
+
 @pytest.fixture(scope="session")
 def nacl_nxs(dials_data):
 
     location = dials_data("isis_sxd_example_data")
     nacl_filename = join(location, "sxd_nacl_run.nxs")
-    assert(isfile(nacl_filename)), f"{nacl_filename} not found"
+    assert isfile(nacl_filename), f"{nacl_filename} not found"
 
     return h5py.File(nacl_filename, "r")
 
-@pytest.mark.parametrize("path", 
-["raw_data_1/beamline",
-"raw_data_1/collection_time",
-"raw_data_1/definition",
-"raw_data_1/definition_local",
-"raw_data_1/detector_1/period_index",
-"raw_data_1/duration",
-"raw_data_1/end_time",
-"raw_data_1/experiment_identifier",
-"raw_data_1/good_frames",
-"raw_data_1/instrument/good_frames",
-"raw_data_1/instrument/dae/vetos/ext0",
-"raw_data_1/instrument/dae/vetos/ext1",
-"raw_data_1/instrument/dae/vetos/fermi_chopper_0",
-"raw_data_1/instrument/dae/vetos/fermi_chopper_1",
-"raw_data_1/instrument/dae/vetos/fermi_chopper_2",
-"raw_data_1/instrument/dae/vetos/smp",
-"raw_data_1/instrument/detector_1/source_detector_distance",
-"raw_data_1/instrument/name",
-"raw_data_1/name",
-"raw_data_1/periods/frames_requested",
-"raw_data_1/periods/good_frames",
-"raw_data_1/periods/number",
-"raw_data_1/periods/raw_frames",
-"raw_data_1/sample/height",
-"raw_data_1/sample/thickness",
-"raw_data_1/sample/width",
-"raw_data_1/start_time",
-"raw_data_1/user_1/affiliation",
-"raw_data_1/user_1/name"
-])
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "raw_data_1/beamline",
+        "raw_data_1/collection_time",
+        "raw_data_1/definition",
+        "raw_data_1/definition_local",
+        "raw_data_1/detector_1/period_index",
+        "raw_data_1/duration",
+        "raw_data_1/end_time",
+        "raw_data_1/experiment_identifier",
+        "raw_data_1/good_frames",
+        "raw_data_1/instrument/good_frames",
+        "raw_data_1/instrument/dae/vetos/ext0",
+        "raw_data_1/instrument/dae/vetos/ext1",
+        "raw_data_1/instrument/dae/vetos/fermi_chopper_0",
+        "raw_data_1/instrument/dae/vetos/fermi_chopper_1",
+        "raw_data_1/instrument/dae/vetos/fermi_chopper_2",
+        "raw_data_1/instrument/dae/vetos/smp",
+        "raw_data_1/instrument/detector_1/source_detector_distance",
+        "raw_data_1/instrument/name",
+        "raw_data_1/name",
+        "raw_data_1/periods/frames_requested",
+        "raw_data_1/periods/good_frames",
+        "raw_data_1/periods/number",
+        "raw_data_1/periods/raw_frames",
+        "raw_data_1/sample/height",
+        "raw_data_1/sample/thickness",
+        "raw_data_1/sample/width",
+        "raw_data_1/start_time",
+        "raw_data_1/user_1/affiliation",
+        "raw_data_1/user_1/name",
+    ],
+)
 def test_same_value(nacl_nxs, nacl_gen_nxs, path):
     gen_val = nacl_gen_nxs[path][:]
     expected_val = nacl_nxs[path][:]
-    assert(gen_val == expected_val)
+    assert gen_val == expected_val
 
-@pytest.mark.parametrize("path, atol",
-[("raw_data_1/detector_1/counts", 1E-3),
-("raw_data_1/detector_1/time_channels_1/time_of_flight", 1E-2),
-("raw_data_1/instrument/dae/time_channels_1/time_of_flight_raw", 100),
-("raw_data_1/instrument/detector_1/delt", 1E-3)
-])
+
+@pytest.mark.parametrize(
+    "path, atol",
+    [
+        ("raw_data_1/detector_1/counts", 1e-3),
+        ("raw_data_1/detector_1/time_channels_1/time_of_flight", 1e-2),
+        ("raw_data_1/instrument/dae/time_channels_1/time_of_flight_raw", 100),
+        ("raw_data_1/instrument/detector_1/delt", 1e-3),
+    ],
+)
 def test_same_array(nacl_nxs, nacl_gen_nxs, path, atol):
     gen_val = nacl_gen_nxs[path][:]
     expected_val = nacl_nxs[path][:]
-    assert(gen_val.shape == expected_val.shape)
-    assert(np.allclose(gen_val, expected_val, atol=atol))
+    assert gen_val.shape == expected_val.shape
+    assert np.allclose(gen_val, expected_val, atol=atol)
