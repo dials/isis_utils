@@ -386,8 +386,7 @@ class IsisRawReader:
                 byte_packet.pos += new_byte
                 counter += 1
             else:
-                assert(counter + 4 < len(data_in)),\
-                "byte out of range"
+                assert(counter + 4 < len(data_in)), "byte out of range"
                 byte_packet.val = data_in[counter+1:counter+5]             
                 counter += 5       
             data_out[i] = byte_packet.pos
@@ -568,8 +567,8 @@ class IsisRawReader:
         self.read_log_info()
         self.reset_file_cursor()
     
-    def read_into_buffer(self, buffer):
-        self.raw_file.readinto(buffer)
+    def read_into_buffer(self, _buffer):
+        self.raw_file.readinto(_buffer)
         
     def move_file_cursor(self, pos):
         self.raw_file.seek(pos)
