@@ -203,9 +203,12 @@ def test_read_time_channel_info(nacl_raw_reader):
     assert(len(nacl_raw_reader.time_channel.raw_boundaries[:]) == 1822)
     assert(len(nacl_raw_reader.time_channel.boundaries[:]) == 1822)
 
+def test_read_user_info(nacl_raw_reader):
+
+    assert(nacl_raw_reader.user.version.value == 1)
+    assert(nacl_raw_reader.user.length == 1)
+    assert(nacl_raw_reader.user.data[:] == pytest.approx([0.0]))
 
 
-
-#def test_read_user_info(nacl_raw_reader)
 #def test_read_data_info(nacl_raw_reader)
 #def test_read_log_info(nacl_raw_reader)
