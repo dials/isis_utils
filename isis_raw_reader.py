@@ -157,7 +157,7 @@ class IsisRawReader:
                 ("LOQ_y_centre", c_float),
                 ("LOQ_beam_stop", c_float),
                 ("LOQ_beam_stop_radius", c_float),
-                ("LOQ_souce_detector_distance", c_float),
+                ("LOQ_source_detector_distance", c_float),
                 ("LOQ_foe_angle", c_float),
                 ("angle_of_incidence", c_float),
                 ("unused", c_int * 29)
@@ -422,10 +422,7 @@ class IsisRawReader:
         self.read_into_buffer(self.instrument.monitor_prescale_val)
         
         update_param_sizes(self.instrument.num_detectors)
-        
         self.read_into_buffer(self.instrument.spectrum_number_table)
-
-
         self.read_into_buffer(self.instrument.hold_off_table)
         self.read_into_buffer(self.instrument.L2_table)
         self.read_into_buffer(self.instrument.UTn_tables_code)
@@ -435,8 +432,8 @@ class IsisRawReader:
         self.read_into_buffer(self.sample.env_version)
         self.read_into_buffer(self.sample.params)
         self.read_into_buffer(self.sample.num_sample_env_params)
-        self.sample.environment = \
-        (self.sample.RawSampleEnvironment * self.sample.num_sample_env_params.value)()
+        num_envs = self.sample.num_sample_env_params.value
+        self.sample.environment = (self.sample.RawSampleEnvironment * num_envs)()
         self.read_into_buffer(self.sample.environment)
         
     def read_dae_info(self):

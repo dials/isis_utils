@@ -104,15 +104,55 @@ def test_read_instrument_info(nacl_raw_reader):
     assert(len(nacl_raw_reader.instrument.two_theta[:]) == 45104)
 
     
-
 def test_read_sample_info(nacl_raw_reader):
 
+    assert(nacl_raw_reader.sample.env_version.value == 2)
+    assert(nacl_raw_reader.sample.params.sample_changer_pos == 0)
+    assert(nacl_raw_reader.sample.params.sample_type == 1)
+    assert(nacl_raw_reader.sample.params.sample_geom == 1)
+    assert(nacl_raw_reader.sample.params.sample_thickness == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.params.sample_height == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.params.sample_width == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.params.sample_omega_angle == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.params.sample_chi_angle == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.params.sample_phi_angle == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.params.scattering_geom == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.params.sample_coh_scattering_xsec == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.params.sample_incoh_xsec == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.params.sample_absorb_xsec == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.params.sample_number_density == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.param.can_wall_thickness == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.param.can_coh_scattering_xsec == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.param.can_cs_inc == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.param.can_cs_abs == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.param.can_number_density == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.param.sample_name_chem_form == b"")
+    assert(nacl_raw_reader.sample.param.e_equip == 0)
+    assert(nacl_raw_reader.sample.param.e_eqname == 0)
 
-
+    assert(nacl_raw_reader.sample.num_sample_env_params.value == 1)
+    assert(len(nacl_raw_reader.sample.environment[:]) == 1)
     
-
-def test_read_sample_info(nacl_raw_reader):
-
+    assert(nacl_raw_reader.sample.environment[0].sample_env_name == b"")
+    assert(nacl_raw_reader.sample.environment[0].sep_value == 0)
+    assert(nacl_raw_reader.sample.environment[0].sep_exponent == 0)
+    assert(nacl_raw_reader.sample.environment[0].sample_env_units == b"")
+    assert(nacl_raw_reader.sample.environment[0].sep_low_trip == 0)
+    assert(nacl_raw_reader.sample.environment[0].sep_high_trip == 0)
+    assert(nacl_raw_reader.sample.environment[0].sep_cur_val == 0)
+    assert(nacl_raw_reader.sample.environment[0].sample_env_status == 0)
+    assert(nacl_raw_reader.sample.environment[0].sample_env_ctrl == 0)
+    assert(nacl_raw_reader.sample.environment[0].sample_env_run_ctrl == 0)
+    assert(nacl_raw_reader.sample.environment[0].sample_env_log == 0)
+    assert(nacl_raw_reader.sample.environment[0].sample_env_stable == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.environment[0].monitor_repeat_period == pytest.approx(0.0))
+    assert(nacl_raw_reader.sample.environment[0].camac_loc_N == 0)
+    assert(nacl_raw_reader.sample.environment[0].camac_loc_A == 0)
+    assert(nacl_raw_reader.sample.environment[0].camac_offset == 0)
+    assert(nacl_raw_reader.sample.environment[0].camac_register_group == 0)
+    assert(nacl_raw_reader.sample.environment[0].pre_proc_routine_num == 0)
+    assert(nacl_raw_reader.sample.environment[0].camac_values[:] = [0, 0, 0, 0, 0, 0,
+                                                                     0, 0, 0, 0, 0, 0]
 
 
 #def test_read_dae_info(nacl_raw_reader)
