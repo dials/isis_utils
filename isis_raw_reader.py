@@ -400,6 +400,7 @@ class IsisRawReader:
         
     def read_run_info(self):
         self.read_into_buffer(self.run.title)
+        self.run.title = self.run.title.rstrip()
         self.read_into_buffer(self.run.user)
         self.read_into_buffer(self.run.params)
         

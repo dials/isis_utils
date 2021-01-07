@@ -25,7 +25,38 @@ def test_read_summary_info(nacl_raw_reader):
 
     assert(nacl_raw_reader.summary.format[:] == [0, 1, 33298])
 
-#def test_read_run_info(nacl_raw_reader)
+def test_read_run_info(nacl_raw_reader):
+
+    assert(nacl_raw_reader.run.title[:] == b"NaCl sphere 6mm diameter RT j:14,14")
+    
+    assert(nacl_raw_reader.run.user.user == b"Team SXD            ")
+    assert(nacl_raw_reader.run.user.daytime_phone == b"                    ")
+    assert(nacl_raw_reader.run.user.daytime_phone_2 == b"                    ")
+    assert(nacl_raw_reader.run.user.nighttime_phone == b"                    ")
+    assert(nacl_raw_reader.run.user.institute == b"(Unspecified)       ")
+
+    assert(nacl_raw_reader.run.params.run_duration == 557) 
+    assert(nacl_raw_reader.run.params.duration_units == 1) 
+    assert(nacl_raw_reader.run.params.duration_freq == 0) 
+    assert(nacl_raw_reader.run.params.dump_interval == 0) 
+    assert(nacl_raw_reader.run.params.dump_units == 0) 
+    assert(nacl_raw_reader.run.params.dump_freq == 0) 
+    assert(nacl_raw_reader.run.params.frequency == 1) 
+    assert(nacl_raw_reader.run.params.good_frames == 27882) 
+    assert(nacl_raw_reader.run.params.raw_frames == 27882) 
+    assert(nacl_raw_reader.run.params.requested_duration == 0) 
+    assert(nacl_raw_reader.run.params.duration_seconds == 557) 
+    assert(nacl_raw_reader.run.params.monitor_sum_1 == 39949211) 
+    assert(nacl_raw_reader.run.params.monitor_sum_2 == 0) 
+    assert(nacl_raw_reader.run.params.monitor_sum_3 == 0) 
+    assert(nacl_raw_reader.run.params.end_date == b"17-DEC-2020 ") 
+    assert(nacl_raw_reader.run.params.end_time == b"09:46:29") 
+    assert(nacl_raw_reader.run.params.proposal_num == 10000) 
+    
+
+
+
+
 #def test_read_instrument_info(nacl_raw_reader)
 #def test_read_sample_info(nacl_raw_reader)
 #def test_read_dae_info(nacl_raw_reader)
