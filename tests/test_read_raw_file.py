@@ -94,7 +94,27 @@ def test_read_instrument_info(nacl_raw_reader):
     assert(nacl_raw_reader.instrument.params.LOQ_foe_angle == pytest.approx(0.0))
     assert(nacl_raw_reader.instrument.params.angle_of_incidence == pytest.approx(0.0))
 
-#def test_read_sample_info(nacl_raw_reader)
+    assert(nacl_raw_reader.num_detectors == 45104)
+    assert(nacl_raw_reader.monitor_detector_number[:] == [45101, 45102, 45103, 45104])
+    assert(nacl_raw_reader.monitor_prescale_val[:] == [1, 1, 1, 1])
+    assert(len(nacl_raw_reader.instrument.spectrum_number_table[:]) == 45104)
+    assert(len(nacl_raw_reader.instrument.hold_off_table[:]) == 45104)
+    assert(len(nacl_raw_reader.instrument.L2_table[:]) == 45104)
+    assert(len(nacl_raw_reader.instrument.UTn_tables_code[:]) == 45104)
+    assert(len(nacl_raw_reader.instrument.two_theta[:]) == 45104)
+
+    
+
+def test_read_sample_info(nacl_raw_reader):
+
+
+
+    
+
+def test_read_sample_info(nacl_raw_reader):
+
+
+
 #def test_read_dae_info(nacl_raw_reader)
 #def test_read_time_channel_info(nacl_raw_reader)
 #def test_read_user_info(nacl_raw_reader)
