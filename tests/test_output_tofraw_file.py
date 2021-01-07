@@ -1,4 +1,7 @@
 import pytest
+import h5py
+from isis_raw_reader import IsisRawReader
+from os.path import join, isFile
 import numpy as np
 
 """
@@ -80,6 +83,23 @@ raw_data_1/sample/type
 raw_data_1/title
 
 """
+
+@pytest.fixture(scope="session")
+def nacl_gen_nxs(nacl_raw_reader, tmpdir_factory):
+
+    nxs_filename = tmpdir_factory.mktemp("data").join("nacl_gen.nxs")
+    nacl_raw_reader.output_tofraw_file(nxs_filename)
+
+    return h5py.File(nxs_filename, "r")
+
+@pytest.fixture(scope="session")
+def nacl_nxs(dials_data):
+
+    location = dials_data("isis_sxd_example_data")
+    nacl_filename = join(location, "sxd_nacl_run.nxs")
+    assert(isfile(nacl_filename)), f"{nacl_filename} not found"
+
+    return h5py.File(nacl_filename, "r")
 
 @pytest.mark.parametrize("path", 
 ["raw_data_1/beamline",
