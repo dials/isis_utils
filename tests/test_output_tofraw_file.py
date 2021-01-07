@@ -1,7 +1,7 @@
 import pytest
 import h5py
 from isis_raw_reader import IsisRawReader
-from os.path import join, isFile
+from os.path import join, isfile
 import numpy as np
 
 """
@@ -137,7 +137,7 @@ def test_same_value(nacl_nxs, nacl_gen_nxs, path):
     expected_val = nacl_nxs[path][:]
     assert(gen_val == expected_val)
 
-@pytest.mark.parameterize("path, atol",
+@pytest.mark.parametrize("path, atol",
 [("raw_data_1/detector_1/counts", 1E-3),
 ("raw_data_1/detector_1/time_channels_1/time_of_flight", 1E-2),
 ("raw_data_1/instrument/dae/time_channels_1/time_of_flight_raw", 100),
