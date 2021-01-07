@@ -15,7 +15,7 @@ class IsisRawReader:
     
     The purpose of this class is to give a simple standalone Python implementation.
     
-    Main source of truth when writing this was the Mantid source code
+    The Main source of truth when writing this was the Mantid source code
     (https://github.com/mantidproject/mantid//Framework/DataHandling/src/LoadRaw)
 
     Raw files broadly contain the sections:
@@ -330,8 +330,6 @@ class IsisRawReader:
                 ("num_spec_compressed_words", c_int),
                 ("compressed_spec_offset", c_int)
             ]
-
-            
             
     class RawSectionPositions(Structure):
         _fields_ = [
@@ -352,8 +350,6 @@ class IsisRawReader:
             ("num_lines", c_int),
         ] 
             
-
-        
     def decompress_data(self, data_in, data_out):
         
         # Byte code used to indicate number cannot be 
@@ -464,10 +460,10 @@ class IsisRawReader:
         
     def read_time_channel_info(self):
         
-        def get_time_channel_boundaries(raw_boundaries, prescale, sync_delay, format_version):
+        def get_time_channel_boundaries(raw_boundaries, prescale, s_delay, fmt_ver):
 
-            added_delay = 4. * sync_delay
-            if format_version.value <= 1:
+            added_delay = 4. * s_delay
+            if fmt_ver.value <= 1:
                 added_delay = 0
             
             boundaries = []
@@ -488,11 +484,10 @@ class IsisRawReader:
         self.time_channel.num_spectra = self.instrument.num_detectors
         self.read_into_buffer(self.time_channel.prescale)
         
-        self.time_channel.raw_boundaries = \
-        (c_int * (self.time_channel.num_time_channels + 1))()
+        num_boundaries = self.time_channel.num_time_channels + 1
+        self.time_channel.raw_boundaries = (c_int * (num_boundaries))()
 
-        self.time_channel.boundaries = \
-        (c_float * (self.time_channel.num_time_channels + 1))()
+        self.time_channel.boundaries = (c_float * (num_boundaries))()
 
         self.read_into_buffer(self.time_channel.raw_boundaries)
         boundaries_lst = get_time_channel_boundaries(self.time_channel.raw_boundaries,
@@ -524,33 +519,33 @@ class IsisRawReader:
         self.read_into_buffer(self.data.data_header) 
         
         compression_type = self.data.data_header.compression_type
-        assert(compression_type == 1),\
-        "Unable to decompress data (compression_type is {} but must be 1)".format(compression_type)
+        assert(compression_type == 1), "Unable to decompress data"
         
-        num_ddes = self.time_channel.num_periods.value * \
-                   (self.time_channel.num_spectra + 1) 
+        num_periods = self.time_channel.num_periods.value
+        num_ddes = num_periods * (self.time_channel.num_spectra + 1) 
         
-        self.data.ddes = \
-            (self.data.RawDDES * num_ddes)()
+        self.data.ddes = (self.data.RawDDES * num_ddes)()
         self.read_into_buffer(self.data.ddes)
         
         ddes_size = self.time_channel.num_time_channels + 1
-        self.data.compressed_data = \
-        (c_ulong * (num_ddes * (ddes_size)))()
+        self.data.compressed_data = (c_ulong * (num_ddes * (ddes_size)))()
         
         for i in range(num_ddes):
             nwords = self.data.ddes[i].num_spec_compressed_words
             read_buffer = (c_char * (4 * nwords))()
             self.read_into_buffer(read_buffer)
-            self.data.compressed_data[i * ddes_size : (i+1) * ddes_size] = self.decompress_data(read_buffer, 
-                            self.data.compressed_data[i * ddes_size : (i+1) * ddes_size])
+            dmin = i * ddes_size 
+            dmax = (i+1) * ddes_size
+            self.data.compressed_data[dmin:dmax] = self.decompress_data(read_buffer, 
+                            self.data.compressed_data[dmin:dmax])
             
         
     def read_log_info(self):
         self.read_into_buffer(self.log.version)
 
     def open_raw_file(self, raw_file_path):
-        assert(raw_file_path.split(".")[-1].lower() == "raw"), "raw_file must be a .raw file"
+        file_ext = raw_file_path.split(".")[-1].lower()
+        assert(file_ext == "raw"), "raw_file must be a .raw file"
         self.raw_file = open(raw_file_path, "rb")
         
     def read_raw_file(self, raw_file_path):
@@ -558,7 +553,8 @@ class IsisRawReader:
         self.open_raw_file(raw_file_path)
         
         if self.raw_file.tell() != 0:
-            print("Reseting raw_file cursor from {} to 0 before reading".format(self.raw_file.tell()))
+            pos = self.raw_file.tell()
+            print(f"Reseting raw_file cursor from {pos} to 0 before reading")
             self.reset_file_cursor()
             
         self.read_summary_info()
