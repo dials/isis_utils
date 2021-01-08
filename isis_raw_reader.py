@@ -1,3 +1,5 @@
+import sys
+from argparse import ArgumentParser, RawTextHelpFormatter
 from ctypes import Structure, Union, c_char, c_float, c_int, c_long, c_ulong
 from os import path
 
@@ -526,9 +528,21 @@ class IsisRawReader:
     def read_log_info(self):
         self.read_into_buffer(self.log.version)
 
-    def open_raw_file(self, raw_file_path):
+    @staticmethod
+    def understand(raw_file_path):
+        try:
+            return IsisRawReader.is_raw_file(raw_file_path)
+        except IOError:
+            return False
+
+    @staticmethod
+    def is_raw_file(raw_file_path):
         file_ext = raw_file_path.split(".")[-1].lower()
-        assert file_ext == "raw", "raw_file must be a .raw file"
+        if file_ext != "raw":
+            return False
+        return True
+
+    def open_raw_file(self, raw_file_path):
         self.raw_file = open(raw_file_path, "rb")
 
     def read_raw_file(self, raw_file_path):
@@ -827,7 +841,7 @@ class IsisRawReader:
             name = "source_detector_distance"
             _type = np.dtype("f4")
             d1_detector_dist = d1_grp.create_dataset(name, (1,), dtype=_type)
-            d1_detector_dist[0] = self.instrument.params.LOQ_souce_detector_distance
+            d1_detector_dist[0] = self.instrument.params.LOQ_source_detector_distance
 
             name = "spectrum_index"
             d1_grp[name] = nxs_file["raw_data_1"]["detector_1"]["spectrum_index"][:]
@@ -1434,9 +1448,6 @@ class IsisRawReader:
             name = grp.create_dataset("name", (1,), dtype=np.dtype("S8"))
             name[0] = self.run.user.user
 
-        if path.isfile(output_filename):
-            raise IOError("{} already exists.".format(output_filename))
-
         nxs_file = h5py.File(output_filename, "a")
         num_detectors = self.instrument.num_detectors
         num_time_channels = self.time_channel.num_time_channels
@@ -1484,3 +1495,65 @@ class IsisRawReader:
         load_total_counts(nxs_file)
         load_total_uncounted_counts(nxs_file)
         load_user_1(nxs_file)
+
+
+class ArgParser(ArgumentParser):
+    def error(self, message):
+        sys.stderr.write("error: %s\n" % message)
+        self.print_help()
+        sys.exit(2)
+
+
+def convert_to_tofraw(raw_file_path):
+    def get_nxs_file_path(raw_file_path):
+
+        nxs_file_path = path.splitext(raw_file_path)[0] + ".nxs"
+
+        count = 1
+        while path.isfile(nxs_file_path):
+            nxs_file_path = path.splitext(raw_file_path)[0] + f"_{count}.nxs"
+            count += 1
+
+        return nxs_file_path
+
+    nxs_file_path = get_nxs_file_path(raw_file_path)
+    isis_raw_reader = IsisRawReader()
+    print(f"Reading {raw_file_path} into memory..")
+    isis_raw_reader.read_raw_file(raw_file_path)
+    print(f"Outputting data to {nxs_file_path}..")
+    isis_raw_reader.output_tofraw_file(nxs_file_path)
+
+
+def main():
+
+    parser = ArgParser(
+        description="Reading ISIS .raw files\n\n"
+        "Example usage: \n"
+        "python isis_raw_reader.py example.raw --convert_to_tofraw\n"
+        "output: example.nxs",
+        formatter_class=RawTextHelpFormatter,
+    )
+    parser.add_argument(
+        "raw_files", nargs="+", help=".raw files to process given space separated"
+    )
+    parser.add_argument(
+        "-tofraw",
+        "--convert_to_tofraw",
+        action="store_true",
+        help="outputs copies of all raw_files as tofraw .nxs files",
+        default=False,
+    )
+
+    args = parser.parse_args()
+    if args.convert_to_tofraw:
+        for raw_file_path in args.raw_files:
+            if IsisRawReader.understand(raw_file_path):
+                convert_to_tofraw(raw_file_path)
+            else:
+                print(f"Cannot understand {raw_file_path}, skipping..")
+    else:
+        parser.print_help()
+
+
+if __name__ == "__main__":
+    main()
