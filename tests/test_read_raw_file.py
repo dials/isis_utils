@@ -98,9 +98,14 @@ def test_read_instrument_info(nacl_raw_reader):
     assert nacl_raw_reader.instrument.params.LOQ_foe_angle == pytest.approx(0.0)
     assert nacl_raw_reader.instrument.params.angle_of_incidence == pytest.approx(0.0)
 
-    assert nacl_raw_reader.num_detectors == 45104
-    assert nacl_raw_reader.monitor_detector_number[:] == [45101, 45102, 45103, 45104]
-    assert nacl_raw_reader.monitor_prescale_val[:] == [1, 1, 1, 1]
+    assert nacl_raw_reader.instrument.num_detectors == 45104
+    assert nacl_raw_reader.instrument.monitor_detector_number[:] == [
+        45101,
+        45102,
+        45103,
+        45104,
+    ]
+    assert nacl_raw_reader.instrument.monitor_prescale_val[:] == [1, 1, 1, 1]
     assert len(nacl_raw_reader.instrument.spectrum_number_table[:]) == 45104
     assert len(nacl_raw_reader.instrument.hold_off_table[:]) == 45104
     assert len(nacl_raw_reader.instrument.L2_table[:]) == 45104
@@ -127,14 +132,14 @@ def test_read_sample_info(nacl_raw_reader):
     assert nacl_raw_reader.sample.params.sample_incoh_xsec == pytest.approx(0.0)
     assert nacl_raw_reader.sample.params.sample_absorb_xsec == pytest.approx(0.0)
     assert nacl_raw_reader.sample.params.sample_number_density == pytest.approx(0.0)
-    assert nacl_raw_reader.sample.param.can_wall_thickness == pytest.approx(0.0)
-    assert nacl_raw_reader.sample.param.can_coh_scattering_xsec == pytest.approx(0.0)
-    assert nacl_raw_reader.sample.param.can_cs_inc == pytest.approx(0.0)
-    assert nacl_raw_reader.sample.param.can_cs_abs == pytest.approx(0.0)
-    assert nacl_raw_reader.sample.param.can_number_density == pytest.approx(0.0)
-    assert nacl_raw_reader.sample.param.sample_name_chem_form == b""
-    assert nacl_raw_reader.sample.param.e_equip == 0
-    assert nacl_raw_reader.sample.param.e_eqname == 0
+    assert nacl_raw_reader.sample.params.can_wall_thickness == pytest.approx(0.0)
+    assert nacl_raw_reader.sample.params.can_coh_scattering_xsec == pytest.approx(0.0)
+    assert nacl_raw_reader.sample.params.can_cs_inc == pytest.approx(0.0)
+    assert nacl_raw_reader.sample.params.can_cs_abs == pytest.approx(0.0)
+    assert nacl_raw_reader.sample.params.can_number_density == pytest.approx(0.0)
+    assert nacl_raw_reader.sample.params.sample_name_chem_form == b""
+    assert nacl_raw_reader.sample.params.e_equip == 0
+    assert nacl_raw_reader.sample.params.e_eqname == 0
 
     assert nacl_raw_reader.sample.num_sample_env_params.value == 1
     assert len(nacl_raw_reader.sample.environment[:]) == 1
@@ -204,13 +209,13 @@ def test_read_dae_info(nacl_raw_reader):
     assert nacl_raw_reader.dae.params.frame_sync_delay == 124
     assert nacl_raw_reader.dae.params.frame_sync_origin == 0
     assert nacl_raw_reader.dae.params.secondary_master_pulse == 0
-    assert nacl_raw_reader.dae.params.external_vetoes == [
+    assert nacl_raw_reader.dae.params.external_vetoes[:] == [
         0,
         0,
         0,
     ]
     assert nacl_raw_reader.dae.params.num_shifted_time_regimes == 0
-    assert nacl_raw_reader.dae.params.time_regime_shift_value == [
+    assert nacl_raw_reader.dae.params.time_regime_shift_value[:] == [
         0,
         0,
         0,
