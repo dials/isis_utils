@@ -1,5 +1,7 @@
 # isis_utils
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+![basic_tests](https://github.com/dials/isis_utils/workflows/basic%20tests/badge.svg)
+[![Python 3.8](https://img.shields.io/badge/python-3.8-blue.svg)](https://www.python.org/downloads/release/python-380/)
 
 The DIALS project provides an extensible framework to analyse X-ray diffraction data.
 Much of this work is agnostic to the method used to obtain diffraction patterns, and can equally be applied to neutron diffraction data.
