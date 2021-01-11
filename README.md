@@ -13,7 +13,7 @@ DIALS can read and, additional post-processing for integration into other packag
 ```
 git clone git@github.com:dials/isis_utils.git
 cd isis_utils
-pip install requirements.txt
+pip install -r requirements.txt
 ```
 
 ### Convert ISIS RAW files to TOFRAW
