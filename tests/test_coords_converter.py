@@ -199,7 +199,6 @@ def test_sxd_dials_to_spherical():
         (60.808816, -96.0, 236.944837),
         (-214.172273, -96.0, 118.198161),
         (-224.99904, -96.0, -96.0),
-        (-60.808816, -96.0, -236.944837),
         (127.533717, -256.614047, 96.0),
         (-96.0, -256.614047, 127.533717),
         (-123.035761, -258.800743, -96.0),
@@ -235,18 +234,18 @@ def test_sxd_dials_to_spherical():
         (-0.0, 5e-06, -1.0),
     )
 
-    expected_r_mag_vals = (
-        225.0,
-        225.0,
-        225.0,
-        225.0,
-        225.0,
-        225.0,
-        270.0,
-        270.0,
-        270.0,
-        270.0,
-        278.0,
+    expected_r_vals = (
+        (136.97132152696219, 0.0, -178.50450156552785),
+        (225.0, 0.0, 1.4210854715202004e-14),
+        (136.97132152696216, 0.0, 178.5045015655279),
+        (-138.5238319482731, 0.0, 177.30241956151244),
+        (-225.0, 0.0, 1.4210854715202004e-14),
+        (-136.97132152696219, 0.0, -178.50450156552787),
+        (194.22174609143582, -187.5577600239293, 1.4210854715202004e-14),
+        (0.0, -187.5577600239293, 194.22174609143582),
+        (-190.9188309203678, -190.91883092036784, 1.4210854715202004e-14),
+        (-2.842170943040401e-14, -187.5577600239293, -194.22174609143582),
+        (0.0, -278.0, 1.9471620496536168e-14),
     )
 
     expected_gam_vals = (
@@ -265,15 +264,15 @@ def test_sxd_dials_to_spherical():
 
     expected_nu_vals = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -44.0, -44.0, -45.0, -44.0, -90.0)
 
-    r_mag_vals, gam_vals, nu_vals = coords_converter.sxd_dials_to_spherical(
+    r_vals, gam_vals, nu_vals = coords_converter.sxd_dials_to_spherical(
         top_left_origin_in_mm=dials_origins,
         fast_axes=dials_fast_axes,
         slow_axes=dials_slow_axes,
         panel_size_in_mm=panel_size_in_mm,
     )
 
-    for i in range(len(r_mag_vals)):
+    for i in range(len(expected_r_vals)):
 
-        assert r_mag_vals[i] == pytest.approx(expected_r_mag_vals[i], abs=1e-3)
+        assert np.allclose(np.array(r_vals[i]), np.array(expected_r_vals[i]), atol=1e-3)
         assert gam_vals[i] == pytest.approx(expected_gam_vals[i], abs=1e-3)
         assert nu_vals[i] == pytest.approx(expected_nu_vals[i], abs=1e-3)

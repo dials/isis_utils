@@ -74,28 +74,28 @@ def sxd_dials_to_spherical(
     """
     Converts DIALS SXD cartesian coordinates to spherical coordinates.
 
-    Returns r_mag_vals, gam_vals(phi), nu_vals(theta)
+    Returns r_vals, gam_vals(phi), nu_vals(theta)
     """
 
     assert len(top_left_origin_in_mm) == len(fast_axes) == len(slow_axes)
 
-    r_mag_vals = []
+    r_vals = []
     gam_vals = []
     nu_vals = []
 
     for i in range(len(top_left_origin_in_mm)):
-        r_mag, nu, gam = dials_panel_to_spherical_coords(
+        r, nu, gam = dials_panel_to_spherical_coords(
             origin=top_left_origin_in_mm[i],
             fast_axis=fast_axes[i],
             slow_axis=slow_axes[i],
             panel_size_in_mm=panel_size_in_mm[i],
         )
 
-        r_mag_vals.append(r_mag)
+        r_vals.append(r)
         gam_vals.append(gam)
         nu_vals.append(nu)
 
-    return r_mag_vals, gam_vals, nu_vals
+    return r_vals, gam_vals, nu_vals
 
 
 def spherical_coords_to_dials_panel(
@@ -150,7 +150,7 @@ def dials_panel_to_spherical_coords(
     fast_axis: vec3float,
     slow_axis: vec3float,
     panel_size_in_mm: vec2float,
-) -> Tuple[float, float, float, vec2int, vec2int]:
+) -> Tuple[vec3float, float, float, vec2int, vec2int]:
 
     centre_origin = shift_origin_top_left_to_centre(
         top_left_origin_in_mm=origin,
@@ -161,7 +161,7 @@ def dials_panel_to_spherical_coords(
 
     r_mag, nu, gam = cartesian_to_sperhical(r=centre_origin)
 
-    return r_mag, nu, gam
+    return centre_origin, nu, gam
 
 
 def cartesian_to_sperhical(r: vec3float) -> vec3float:
