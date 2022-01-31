@@ -159,12 +159,12 @@ def dials_panel_to_spherical_coords(
         panel_size_in_mm=panel_size_in_mm,
     )
 
-    r_mag, nu, gam = cartesian_to_sperhical(r=centre_origin)
+    r_mag, nu, gam = cartesian_to_spherical(r=centre_origin)
 
     return centre_origin, nu, gam
 
 
-def cartesian_to_sperhical(r: vec3float) -> vec3float:
+def cartesian_to_spherical(r: vec3float) -> vec3float:
 
     """
     Converts from cartesian coordinates to the vector magnitude
@@ -185,9 +185,9 @@ def get_gam_in_deg(x: float, z: float) -> float:
     # Avoid small changes in sign changing around zero
     x = np.round(x, 6)
     z = np.round(z, 6)
-    if abs(x) < 1e-6:
+    if abs(x) < 1e-3:
         x = 0.0
-    if abs(z) < 1e-6:
+    if abs(z) < 1e-3:
         z = 0.0
     return degrees(atan2(x, z))
 
