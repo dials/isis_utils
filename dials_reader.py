@@ -105,8 +105,8 @@ class DIALSReader(ExperimentReader):
         # TODO Let user choose which to use
         using_calc_fields = False
         required_fields = [
-            "1D_spectra_id",
-            "intensity_sum.value",
+            "spectra_idx_1D",
+            "intensity.sum.value",
             "energy",
             "d_spacing",
         ]
@@ -135,18 +135,18 @@ class DIALSReader(ExperimentReader):
 
         # Get required values
         idxs = self._refl_file["id"] == expt_idx
-        detectorID = self._refl_file["1D_spectra_id"][idxs]
-        intensity = self._refl_file["intensity_sum.value"][idxs]
+        spectra_idx_1D = self._refl_file["spectra_idx_1D"][idxs]
+        intensity = self._refl_file["intensity.sum.value"][idxs]
         energy = self._refl_file["energy"][idxs]
         d_spacing = self._refl_file["d_spacing"][idxs]
 
         # Get calculated or observed values
         if using_calc_fields:
             wavelength = self._refl_file["wavelength_calc"][idxs]
-            tof = self._refl_file["tof_calc"][idxs]
+            tof = self._refl_file["tof_calc"][idxs] * 10 ** 6
         else:
             wavelength = self._refl_file["wavelength"][idxs]
-            tof = self._refl_file["tof"][idxs]
+            tof = self._refl_file["tof"][idxs] * 10 ** 6
 
         # Optionally get miller indices
         if "miller_indices" in self._refl_file.keys():
@@ -155,7 +155,7 @@ class DIALSReader(ExperimentReader):
             miller_indices = None
 
         peak_table = PeakTable(
-            detectorID=detectorID,
+            spectra_idx_1D=spectra_idx_1D,
             intensity=intensity,
             energy=energy,
             wavelength=wavelength,

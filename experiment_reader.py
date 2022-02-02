@@ -61,4 +61,4 @@ class ExperimentReader(metaclass=ABCMeta):
         self.replace_panels(new_panels=converted_panels, expt_idx=expt_idx)
 
         reader_peak_table = reader.get_peak_table(expt_idx=expt_idx)
-        self.replace_peak_table(peak_table=reader_peak_table)
+        self.replace_peak_table(new_peak_table=reader_peak_table)

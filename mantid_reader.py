@@ -24,7 +24,7 @@ class MantidReader(ExperimentReader):
     _xml_path = "mantid_workspace_1/instrument/instrument_xml/data"
     _peaks_workspace_path = "mantid_workspace_1/peaks_workspace"
     _peak_workspace_columns = {
-        "column_1": "detectorID",
+        "column_1": "spectra_idx_1D",
         "column_2": "miller_idx_h",
         "column_3": "miller_idx_k",
         "column_4": "miller_idx_l",
@@ -176,6 +176,9 @@ class MantidReader(ExperimentReader):
     def convert_panels(self, panels: Tuple[Panel, ...]) -> Tuple[MantidPanel, ...]:
         return [i.to_mantid() for i in panels]
 
+    def get_peak_table(self, expt_idx: int = 0) -> PeakTable:
+        pass
+
     def replace_peak_table(self, new_peak_table: PeakTable, expt_idx: int = 0) -> None:
 
         self._open(mode="r+", expt_idx=expt_idx, open_xml=False)
@@ -192,13 +195,16 @@ class MantidReader(ExperimentReader):
         miller_idx_l = np.array([i[2] for i in new_peak_table["miller_indices"]])
         miller_idxs = {"h": miller_idx_h, "k": miller_idx_k, "l": miller_idx_l}
 
-        for column in pws.keys():
+        for column in list(pws.keys()):
             # Pad with zeros all unknown columns
             if column not in self._peak_workspace_columns:
-                pws[column][:] = np.zeros(new_peak_table.get_size())
+                del pws[column]
+                pws.create_dataset(column, data=np.zeros(new_peak_table.get_size()))
             elif "miller_idx" in self._peak_workspace_columns[column]:
-                pws[column][:] = miller_idxs[pws_d[column][-1]]
+                del pws[column]
+                pws.create_dataset(column, data=miller_idxs[pws_d[column][-1]])
             else:
-                pws[column][:] = new_peak_table[pws_d[column]]
+                del pws[column]
+                pws.create_dataset(column, data=new_peak_table[pws_d[column]])
 
         self._close()

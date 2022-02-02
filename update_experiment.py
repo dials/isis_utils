@@ -68,7 +68,7 @@ def main():
                 copy_file_path = get_output_path(file_path=file_path)
                 copyfile(file_path, copy_file_path)
                 source_reader = experiment_reader_factory(file_path=copy_file_path)
-            source_reader.update_from_reader(reader=reader_to_extract_from)
+            source_reader.replace_from_reader(reader=reader_to_extract_from)
     else:
         parser.print_help()
 
