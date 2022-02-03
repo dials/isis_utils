@@ -132,20 +132,20 @@ class DIALSPanel(Panel):
 
     def to_mantid(self) -> MantidPanel:
 
-        # Mantid works in m, DIALS works in mm
-        origin_m = tuple([i / 1000 for i in self.origin])
         origin, nu, gam = dials_panel_to_spherical_coords(
-            origin=origin_m,
+            origin=self.origin,
             fast_axis=self.fast_axis,
             slow_axis=self.slow_axis,
             panel_size_in_mm=self.panel_size_in_mm,
         )
+        # Mantid works in m, DIALS works in mm
+        origin_m = tuple([i / 1000 for i in origin])
         name = DIALSPanel.get_mantid_panel_name(self.name)
         rotations = ((gam, (0, 1, 0)), (nu, (1, 0, 0)))
         return MantidPanel(
             name=name,
             rotations=rotations,
-            origin=origin,
+            origin=origin_m,
             panel_size_in_mm=self.panel_size_in_mm,
         )
 

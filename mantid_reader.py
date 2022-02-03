@@ -60,9 +60,9 @@ class MantidReader(ExperimentReader):
     def get_panels(self, expt_idx: int = 0) -> Tuple[MantidPanel, ...]:
         def get_rotation_vals(rot):
             val = float(rot.attrib["val"])
-            x = int(rot.attrib["x-axis"])
-            y = int(rot.attrib["y-axis"])
-            z = int(rot.attrib["z-axis"])
+            x = int(rot.attrib["axis-x"])
+            y = int(rot.attrib["axis-y"])
+            z = int(rot.attrib["axis-z"])
             return (val, (x, y, z))
 
         def get_rotations(line, rotations):
@@ -123,22 +123,23 @@ class MantidReader(ExperimentReader):
 
         def set_rotations(rotation_line, rotations, idx=0):
             if idx < len(rotations):
-                try:
-                    rotation_line.set("val", str(rotations[idx][0]))
-                    rotation_line.set("x-axis", str(rotations[idx][1][0]))
-                    rotation_line.set("y-axis", str(rotations[idx][1][1]))
-                    rotation_line.set("z-axis", str(rotations[idx][1][2]))
-                    idx += 1
-                    if idx < len(rotations):
+                rotation_line.set("val", str(rotations[idx][0]))
+                rotation_line.set("axis-x", str(rotations[idx][1][0]))
+                rotation_line.set("axis-y", str(rotations[idx][1][1]))
+                rotation_line.set("axis-z", str(rotations[idx][1][2]))
+                idx += 1
+                if idx < len(rotations):
+                    # If there is still a rotation to set but it does not exist
+                    # create it
+                    try:
                         set_rotations(rotation_line[0], rotations, idx)
-                except IndexError:
-                    new_line = ET.SubElement(rotation_line, "rot")
-                    new_line.set("val", "")
-                    new_line.set("x-axis", "")
-                    new_line.set("y-axis", "")
-                    new_line.set("z-axis", "")
-                    idx += 1
-                    set_rotations(new_line, rotations, idx)
+                    except IndexError:
+                        new_line = ET.SubElement(rotation_line, "rot")
+                        new_line.set("val", "")
+                        new_line.set("axis-x", "")
+                        new_line.set("axis-y", "")
+                        new_line.set("axis-z", "")
+                        set_rotations(new_line, rotations, idx)
 
         panel_dict = {i.name: i for i in new_panels}
         for child in self._xml:
@@ -153,7 +154,11 @@ class MantidReader(ExperimentReader):
                     panel.attrib["z"] = str(z)
                     set_rotations(panel[0], rotations=new_panel.rotations)
 
-        self._nxs_file[self._xml_path][...] = ET.tostring(self._xml)
+        ET.register_namespace("xsi", "http://www.w3.org/2001/XMLSchema-instance")
+        ET.register_namespace("", "http://www.mantidproject.org/IDF/1.0")
+        self._nxs_file[self._xml_path][...] = ET.tostring(
+            self._xml, encoding="utf8", method="xml"
+        )
 
         self._close()
 
@@ -179,7 +184,22 @@ class MantidReader(ExperimentReader):
     def get_peak_table(self, expt_idx: int = 0) -> PeakTable:
         pass
 
+    def has_peak_table(self, expt_idx: int = 0) -> bool:
+        self._open(mode="r+", expt_idx=expt_idx, open_xml=False)
+        try:
+            _ = self._nxs_file[self._peaks_workspace_path]
+            self._close()
+            return True
+        except KeyError:
+            self._close()
+            return False
+
     def replace_peak_table(self, new_peak_table: PeakTable, expt_idx: int = 0) -> None:
+
+        if not self.has_peak_table(expt_idx=expt_idx):
+            raise ValueError(
+                f"Tried to get PeakTable but not found in {self.file_path}"
+            )
 
         self._open(mode="r+", expt_idx=expt_idx, open_xml=False)
 

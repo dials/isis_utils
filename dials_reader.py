@@ -88,13 +88,16 @@ class DIALSReader(ExperimentReader):
     def convert_panels(self, panels: Tuple[Panel, ...]) -> Tuple[Panel, ...]:
         return [i.to_dials() for i in panels]
 
+    def has_peak_table(self, expt_idx: int = 0) -> bool:
+        return self.refl_file_path is not None
+
     def get_peak_table(self, expt_idx: int = 0) -> PeakTable:
 
         """
         Reads the .refl file at self.refl_file_path and returns a PeakTable
         """
 
-        if self.refl_file_path is None:
+        if not self.has_peak_table(expt_idx=expt_idx):
             raise ValueError("Tried to get PeakTable but self.refl_file_path is None")
 
         if self._refl_file is None:
