@@ -35,6 +35,31 @@ class MantidReader(ExperimentReader):
         "column_12": "d_spacing",
         "column_13": "tof",
     }
+    _peak_workspace_fixed_columns = ("column_14", "column_16")
+
+    _peak_workspace_types = {
+        "column_1": np.dtype("<i4"),
+        "column_2": np.dtype("<f8"),
+        "column_3": np.dtype("<f8"),
+        "column_4": np.dtype("<f8"),
+        "column_5": np.dtype("<f8"),
+        "column_6": np.dtype("<f8"),
+        "column_7": np.dtype("<f8"),
+        "column_8": np.dtype("<f8"),
+        "column_9": np.dtype("<f8"),
+        "column_10": np.dtype("<f8"),
+        "column_11": np.dtype("<f8"),
+        "column_12": np.dtype("<f8"),
+        "column_13": np.dtype("<f8"),
+        "column_14": np.dtype("<i4"),
+        "column_15": np.dtype("<f8"),
+        "column_16": np.dtype("|S16"),
+        "column_17": np.dtype("<i4"),
+        "column_18": np.dtype("<f8"),
+    }
+
+    # The second dimension size for 2D columns
+    _peak_workspace_shapes = {"column_15": 9, "column_16": 1}
 
     def __init__(self, nxs_file_path: str):
         self.file_path = nxs_file_path
@@ -195,6 +220,29 @@ class MantidReader(ExperimentReader):
             return False
 
     def replace_peak_table(self, new_peak_table: PeakTable, expt_idx: int = 0) -> None:
+        def get_resized_array(arr: np.array, new_size: int) -> np.array:
+            if len(arr) > new_size:
+                return arr[:new_size]
+            if arr.shape == 1:
+                pad_val = arr[0]
+                return np.pad(
+                    arr, ((0, new_size)), mode="constant", constant_values=pad_val
+                )
+            elif arr.shape == 2:
+                pad_val = arr[0, 0]
+                return np.pad(
+                    arr,
+                    ((0, new_size), (0, 0)),
+                    mode="constant",
+                    constant_values=pad_val,
+                )
+            raise NotImplementedError("Cannot handle columns with dimensions > 2")
+
+        def get_zero_array(column: str, arr_size: int) -> np.array:
+            shape_2d = self._peak_workspace_shapes.get(column)
+            if shape_2d is not None:
+                return np.zeros(arr_size * shape_2d).reshape(arr_size, shape_2d)
+            return np.zeros(arr_size)
 
         if not self.has_peak_table(expt_idx=expt_idx):
             raise ValueError(
@@ -208,23 +256,50 @@ class MantidReader(ExperimentReader):
 
         # map of workspace columns to PeakTable values
         pws_d = self._peak_workspace_columns
+        # datatypes for each column
+        pws_dt = self._peak_workspace_types
 
         # Mantid stores each miller index in a different column
         miller_idx_h = np.array([i[0] for i in new_peak_table["miller_indices"]])
         miller_idx_k = np.array([i[1] for i in new_peak_table["miller_indices"]])
         miller_idx_l = np.array([i[2] for i in new_peak_table["miller_indices"]])
         miller_idxs = {"h": miller_idx_h, "k": miller_idx_k, "l": miller_idx_l}
+        size = new_peak_table.get_size()
 
         for column in list(pws.keys()):
+
+            # Coordinate system is not modified
+            if column == "coordinate_system":
+                continue
+
+            # Just resize these columns (e.g. run number)
+            if column in self._peak_workspace_fixed_columns:
+                data = get_resized_array(arr=pws[column][:], new_size=size)
+                del pws[column]
+                pws.create_dataset(column, data=np.array(data, dtype=pws_dt[column]))
+                continue
+
             # Pad with zeros all unknown columns
             if column not in self._peak_workspace_columns:
                 del pws[column]
-                pws.create_dataset(column, data=np.zeros(new_peak_table.get_size()))
+                pws.create_dataset(
+                    column,
+                    data=get_zero_array(column=column, arr_size=size),
+                    dtype=pws_dt[column],
+                )
+            # Miller indices are stored in separate columns in Mantid
             elif "miller_idx" in self._peak_workspace_columns[column]:
                 del pws[column]
-                pws.create_dataset(column, data=miller_idxs[pws_d[column][-1]])
+                pws.create_dataset(
+                    column,
+                    data=np.array(miller_idxs[pws_d[column][-1]], dtype=pws_dt[column]),
+                )
+            # Upate with value from PeakTable, ensuring dtype is correct
             else:
                 del pws[column]
-                pws.create_dataset(column, data=new_peak_table[pws_d[column]])
+                pws.create_dataset(
+                    column,
+                    data=np.array(new_peak_table[pws_d[column]], dtype=pws_dt[column]),
+                )
 
         self._close()
