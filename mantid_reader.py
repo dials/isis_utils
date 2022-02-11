@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
-from typing import Tuple
+from typing import Dict, Tuple
 
 import h5py
 import numpy as np
@@ -23,6 +23,7 @@ class MantidReader(ExperimentReader):
 
     _xml_path = "mantid_workspace_1/instrument/instrument_xml/data"
     _peaks_workspace_path = "mantid_workspace_1/peaks_workspace"
+    _process_path = "mantid_workspace_1/process"
     _peak_workspace_columns = {
         "column_1": "spectra_idx_1D",
         "column_2": "miller_idx_h",
@@ -35,7 +36,7 @@ class MantidReader(ExperimentReader):
         "column_12": "d_spacing",
         "column_13": "tof",
     }
-    _peak_workspace_fixed_columns = ("column_14", "column_16")
+    _peak_workspace_fixed_columns = ("column_11", "column_14", "column_15", "column_16")
 
     _peak_workspace_types = {
         "column_1": np.dtype("<i4"),
@@ -67,6 +68,8 @@ class MantidReader(ExperimentReader):
         self._xml = None
 
     def _open(self, mode: str = "r", expt_idx: int = 0, open_xml: bool = True) -> None:
+        if self._nxs_file is not None:
+            return
         self._nxs_file = h5py.File(self.file_path, mode)
         if open_xml:
             self._open_xml()
@@ -182,7 +185,7 @@ class MantidReader(ExperimentReader):
         ET.register_namespace("xsi", "http://www.w3.org/2001/XMLSchema-instance")
         ET.register_namespace("", "http://www.mantidproject.org/IDF/1.0")
         self._nxs_file[self._xml_path][...] = ET.tostring(
-            self._xml, encoding="utf8", method="xml"
+            self._xml, encoding="ASCII", method="xml"
         )
 
         self._close()
@@ -220,15 +223,28 @@ class MantidReader(ExperimentReader):
             return False
 
     def replace_peak_table(self, new_peak_table: PeakTable, expt_idx: int = 0) -> None:
+
+        """
+        Updates peaks workspace at self._peaks_workspace_path with values in new_peak_table.
+        Data that are not in new_peak_table are replaced with zero values, unless they are in columns
+        self._peak_workspace_fixed_columns, where they are just sliced or padded with the zeroth idx value.
+        """
+
         def get_resized_array(arr: np.array, new_size: int) -> np.array:
+
+            """
+            Returns arr resized to new_size using zeroth idx element for padding,
+            taking into account the shape of arr
+            """
+
             if len(arr) > new_size:
                 return arr[:new_size]
-            if arr.shape == 1:
+            if arr.ndim == 1:
                 pad_val = arr[0]
                 return np.pad(
                     arr, ((0, new_size)), mode="constant", constant_values=pad_val
                 )
-            elif arr.shape == 2:
+            elif arr.ndim == 2:
                 pad_val = arr[0, 0]
                 return np.pad(
                     arr,
@@ -239,10 +255,45 @@ class MantidReader(ExperimentReader):
             raise NotImplementedError("Cannot handle columns with dimensions > 2")
 
         def get_zero_array(column: str, arr_size: int) -> np.array:
+
+            """
+            Returns an array of arr_size with all elements as 0,
+            taking into account the shape required by column
+            """
+
             shape_2d = self._peak_workspace_shapes.get(column)
             if shape_2d is not None:
                 return np.zeros(arr_size * shape_2d).reshape(arr_size, shape_2d)
             return np.zeros(arr_size)
+
+        def get_column_attributes(column: "h5py.dataset") -> Dict[str, np.bytes_]:
+
+            """
+            Gets the attributes for a given peak table
+            column and returns them
+            """
+
+            attrib_dict = {}
+            for i in column.attrs.items():
+                attrib_dict[i[0]] = i[1]
+            return attrib_dict
+
+        def set_column_attributes(
+            column: "h5py.dataset", attrib_dict: Dict[str, np.bytes_]
+        ) -> None:
+
+            """
+            Creates attribute columns for column based on values in attrib_dict.
+            """
+
+            tid = h5py.h5t.TypeID.copy(h5py.h5t.C_S1)
+            tid.set_strpad(h5py.h5t.STR_NULLTERM)
+            sid = h5py.h5s.create(0)
+            for i in attrib_dict:
+                h5py.h5a.create(
+                    loc=column.id, name=i.encode("ASCII"), tid=tid, space=sid
+                )
+                column.attrs.__setitem__(i, np.array(attrib_dict[i], dtype="S"))
 
         if not self.has_peak_table(expt_idx=expt_idx):
             raise ValueError(
@@ -267,6 +318,8 @@ class MantidReader(ExperimentReader):
         size = new_peak_table.get_size()
 
         for column in list(pws.keys()):
+
+            column_attributes = get_column_attributes(column=pws[column])
 
             # Coordinate system is not modified
             if column == "coordinate_system":
@@ -301,5 +354,7 @@ class MantidReader(ExperimentReader):
                     column,
                     data=np.array(new_peak_table[pws_d[column]], dtype=pws_dt[column]),
                 )
+
+            set_column_attributes(column=pws[column], attrib_dict=column_attributes)
 
         self._close()
