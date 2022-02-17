@@ -43,6 +43,9 @@ class PeakTable:
             "miller_indices": self.miller_indices,
         }
 
+    def __len__(self):
+        return self._size
+
     def __getitem__(self, index):
         return self._dict[index]
 
@@ -135,6 +138,3 @@ class PeakTable:
             raise ValueError("Size is not consistent with current values")
         else:
             self._miller_indices = value
-
-    def get_size(self) -> int:
-        return self._size

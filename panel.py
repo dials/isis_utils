@@ -1,154 +1,63 @@
 from __future__ import annotations
 
-from abc import ABCMeta, abstractmethod
-from typing import Tuple
+import numpy as np
 
-from coords_converter import (
-    cartesian_to_spherical,
-    dials_panel_to_spherical_coords,
-    spherical_coords_to_dials_panel,
-)
+from typing_utils import Array
 
-vec3float = Tuple[float, float, float]
-vec3int = Tuple[int, int, int]
-vec2float = Tuple[float, float]
+vec3float = Array["3", float]
+vec2float = Array["2", float]
+vec3int = Array["3", int]
+vec2int = Array["2", int]
 
 
-class Panel(metaclass=ABCMeta):
+class Panel:
 
     """
-    Base class to define interface for methods related
-    to panel conversion.
-    """
-
-    @abstractmethod
-    def to_dials(self) -> DIALSPanel:
-        """
-        Returns DIALSPanel using data in self
-        """
-        pass
-
-    @abstractmethod
-    def to_mantid(self) -> MantidPanel:
-        """
-        Returns MantidPanel using data in self
-        """
-        pass
-
-    @abstractmethod
-    def show(self) -> None:
-        """
-        Prints data
-        """
-        pass
-
-
-class MantidPanel(Panel):
-
-    """
-    Class to store Mantid panel data
+    Class to store panel properties in spherical coordinates
+    that different readers can understand.
     """
 
     def __init__(
         self,
-        name: str,
-        origin: vec3float,
-        rotations: Tuple[Tuple[float, vec3int], ...],
-        panel_size_in_mm: vec2float,
-    ) -> None:
+        idx: int,
+        centre_origin_in_m: float,
+        gam_in_deg: float,
+        nu_in_deg: float,
+        num_pixels: vec2int,
+        pixel_size_in_m: vec2float,
+        x_orientation: vec2int = np.array((1, 0)),
+        y_orientation: vec2int = np.array((0, 1)),
+    ):
 
-        self.name = name
-        self.origin = origin
-        self.rotations = rotations
-        self.panel_size_in_mm = panel_size_in_mm
+        self.idx = idx
+        self.centre_origin_in_m = centre_origin_in_m
+        self.gam_in_deg = gam_in_deg
+        self.nu_in_deg = nu_in_deg
+        self.num_pixels = num_pixels
+        self.pixel_size_in_m = pixel_size_in_m
+        self.x_orientation = x_orientation
+        self.y_orientation = y_orientation
 
-    def show(self) -> None:
-        print(f"name: {self.name}")
-        print(f"origin: {self.origin}")
-        print("rotations:")
-        for i in self.rotations:
-            print(i)
-        print(f"panel_size_in_mm: {self.panel_size_in_mm}")
+    def panel_size_in_m(self) -> vec2float:
+        panel_size = []
+        for i in range(len(self.num_pixels)):
+            panel_size.append(self.num_pixels[i] * self.pixel_size_in_m[i])
+        return np.array(panel_size)
 
-    def to_dials(self) -> DIALSPanel:
-        # Mantid works in m, DIALS works in mm
-        origin_mm = tuple([i * 1000 for i in self.origin])
-        r_mag, gam, nu = cartesian_to_spherical(origin_mm)
-        origin, fast_axis, slow_axis = spherical_coords_to_dials_panel(
-            centre_origin_mag_in_mm=r_mag,
-            gam_in_deg=gam,
-            nu_in_deg=nu,
-            panel_size_in_mm=self.panel_size_in_mm,
-        )
-        name = MantidPanel.get_dials_panel_name(self.name)
-        return DIALSPanel(
-            name=name,
-            origin=origin,
-            fast_axis=fast_axis,
-            slow_axis=slow_axis,
-            panel_size_in_mm=self.panel_size_in_mm,
-        )
+    def orientations_flipped(self) -> bool:
+        abs_x = tuple([abs(i) for i in self.x_orientation])
+        abs_y = tuple([abs(i) for i in self.y_orientation])
+        return abs_x == (0, 1) and abs_y == (1, 0)
 
-    def to_mantid(self) -> MantidPanel:
-        return self
+    def orientation_direction_flipped(self) -> bool:
+        return sum(self.x_orientation) == sum(self.y_orientation) == -1
 
-    @staticmethod
-    def get_dials_panel_name(mantid_panel_name: str) -> str:
-        num = mantid_panel_name.split("bank")[1]
-        if len(num) == 1:
-            return "0" + num
-        return num
-
-
-class DIALSPanel(Panel):
-    """
-    Class to store DIALS panel data
-    """
-
-    def __init__(
-        self,
-        name: str,
-        origin: vec3float,
-        fast_axis: vec3float,
-        slow_axis: vec3float,
-        panel_size_in_mm: vec2float,
-    ) -> None:
-
-        self.name = name
-        self.origin = origin
-        self.fast_axis = fast_axis
-        self.slow_axis = slow_axis
-        self.panel_size_in_mm = panel_size_in_mm
-
-    def show(self) -> None:
-        print(f"name: {self.name}")
-        print(f"origin: {self.origin}")
-        print(f"fast_axis: {self.fast_axis}")
-        print(f"slow_axis: {self.slow_axis}")
-        print(f"panel_size_in_mm: {self.panel_size_in_mm}")
-
-    def to_dials(self) -> DIALSPanel:
-        return self
-
-    def to_mantid(self) -> MantidPanel:
-
-        origin, nu, gam = dials_panel_to_spherical_coords(
-            origin=self.origin,
-            fast_axis=self.fast_axis,
-            slow_axis=self.slow_axis,
-            panel_size_in_mm=self.panel_size_in_mm,
-        )
-        # Mantid works in m, DIALS works in mm
-        origin_m = tuple([i / 1000 for i in origin])
-        name = DIALSPanel.get_mantid_panel_name(self.name)
-        rotations = ((gam, (0, 1, 0)), (nu, (1, 0, 0)))
-        return MantidPanel(
-            name=name,
-            rotations=rotations,
-            origin=origin_m,
-            panel_size_in_mm=self.panel_size_in_mm,
-        )
-
-    @staticmethod
-    def get_mantid_panel_name(dials_panel_name: str) -> str:
-        return "bank" + str(int(dials_panel_name))
+    def __repr__(self) -> None:
+        return f"idx: {self.idx} \n \
+        centre origin (m): {self.centre_origin_in_m} \n \
+        gam (deg): {self.gam_in_deg} \n \
+        nu (deg): {self.nu_in_deg} \n \
+        num pixels: {self.num_pixels} \n \
+        pixel size (m): {self.pixel_size_in_m} \n \
+        x_orientation: {self.x_orientation} \n \
+        y_orientation: {self.y_orientation}"

@@ -6,274 +6,66 @@ import pytest
 import coords_converter
 
 
-def test_get_fast_slow_axes():
+def test_shift_origin_top_left_to_centre():
 
-    gam_vals = (142.5, 90.0, 37.5, -38.0, -90.0, -142.5, 90.0, 0.0, -90.0, 180.0, 0.0)
+    fast_axis = np.array((0.7931071, -0.0, -0.6090822))
+    slow_axis = np.array((0.0, 1.0, 0.0))
+    top_left_origin_in_m = np.array((0.060809, -0.096, 0.0236945))
 
-    nu_vals = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -44.0, -44.0, -45.0, -44.0, -90.0)
+    panel_size_in_m = np.array((0.003, 0.003))
 
-    r_mag_vals = (
-        225.0,
-        225.0,
-        225.0,
-        225.0,
-        225.0,
-        225.0,
-        270.0,
-        270.0,
-        270.0,
-        270.0,
-        278.0,
+    centre_origin_in_m = coords_converter.shift_origin_top_left_to_centre(
+        top_left_origin_in_m=top_left_origin_in_m,
+        fast_axis=fast_axis,
+        slow_axis=slow_axis,
+        panel_size_in_m=panel_size_in_m,
     )
+    expected_origin = np.array((0.06199866, -0.0945, 0.02278088))
 
-    expected_fast_axes = (
-        (-0.793, 0.0, -0.609),
-        (0.0, 0.0, -1.0),
-        (0.793, 0.0, -0.609),
-        (0.788, 0.0, 0.616),
-        (-0.0, 0.0, 1.0),
-        (-0.793, 0.0, 0.609),
-        (0.0, 0.0, -1.0),
-        (1.0, 0.0, 0.0),
-        (-0.0, 0.0, 1.0),
-        (-1.0, 0.0, -0.0),
-        (1.0, -0.0, -0.0),
+    assert np.allclose(centre_origin_in_m, expected_origin, atol=1e-3)
+
+
+def test_shift_origin_centre_to_top_left():
+
+    fast_axis = np.array((0.7931071, -0.0, -0.6090822))
+    slow_axis = np.array((0.0, 1.0, 0.0))
+    centre_origin_in_m = np.array((0.06199866, -0.0945, 0.02278088))
+    panel_size_in_m = np.array((0.003, 0.003))
+
+    top_left_origin_in_m = coords_converter.shift_origin_centre_to_top_left(
+        centre_origin_in_m=centre_origin_in_m,
+        fast_axis=fast_axis,
+        slow_axis=slow_axis,
+        panel_size_in_m=panel_size_in_m,
     )
+    expected_origin = np.array((0.060809, -0.096, 0.0236945))
 
-    expected_slow_axes = (
-        (0.0, 1.0, 0.0),
-        (0.0, 1.0, 0.0),
-        (0.0, 1.0, 0.0),
-        (-0.0, 1.0, 0.0),
-        (-0.0, 1.0, 0.0),
-        (-0.0, 1.0, -0.0),
-        (0.695, 0.719, 0.0),
-        (0.0, 0.719, 0.695),
-        (-0.707, 0.707, 0.0),
-        (-0.0, 0.719, -0.695),
-        (-0.0, 0.0, 1.0),
-    )
-
-    for i in range(len(gam_vals)):
-        fast_axis, slow_axis = coords_converter.get_fast_slow_axes(
-            r_mag=r_mag_vals[i], phi=radians(gam_vals[i]), theta=radians(nu_vals[i])
-        )
-
-        assert np.allclose(
-            np.array(fast_axis), np.array(expected_fast_axes[i]), atol=1e-3
-        )
-
-        assert np.allclose(
-            np.array(slow_axis), np.array(expected_slow_axes[i]), atol=1e-3
-        )
+    assert np.allclose(top_left_origin_in_m, expected_origin, atol=1e-3)
 
 
-def test_sxd_spherical_to_dials():
+def test_vector_to_spherical():
 
-    panel_size_in_mm = tuple([(192, 192) for i in range(11)])
+    r = np.array((0.1369713215, 0.000, 0.1785045016))
 
-    centre_origin_mag_in_mm = (
-        225.0,
-        225.0,
-        225.0,
-        225.0,
-        225.0,
-        225.0,
-        270.0,
-        270.0,
-        270.0,
-        270.0,
-        278.0,
-    )
+    r_mag, gam, nu = coords_converter.vector_to_spherical(r=r)
 
-    gam_in_deg = (142.5, 90.0, 37.5, -38.0, -90.0, -142.5, 90.0, 0.0, -90.0, 180.0, 0.0)
+    expected_r_mag = 0.225
+    expected_gam = 37.4999
+    expected_nu = 0
 
-    nu_in_deg = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -44.0, -44.0, -45.0, -44.0, -90.0)
-
-    det_orient_x = (
-        (0, -1),
-        (1, 0),
-        (1, 0),
-        (1, 0),
-        (1, 0),
-        (1, 0),
-        (1, 0),
-        (1, 0),
-        (1, 0),
-        (1, 0),
-        (-1, 0),
-    )
-
-    det_orient_z = (
-        (-1, 0),
-        (0, 1),
-        (0, 1),
-        (0, 1),
-        (0, 1),
-        (0, 1),
-        (0, 1),
-        (0, 1),
-        (0, 1),
-        (0, 1),
-        (0, -1),
-    )
-
-    expected_top_left_origins_in_mm = (
-        (60.81, 96.0, -236.946),
-        (224.999, -96.0, 96.0),
-        (60.809, -96.0, 236.945),
-        (-214.172, -96.0, 118.198),
-        (-224.999, -96.0, -96.0),
-        (-60.809, -96.0, -236.945),
-        (127.534, -256.614, 96.0),
-        (-96.0, -256.614, 127.534),
-        (-123.036, -258.801, -96.0),
-        (96.0, -256.614, -127.534),
-        (96.0, -278.0, 96.0),
-    )
-
-    expected_fast_axes = (
-        (-0.0, -1.0, 0.0),
-        (0.0, 0.0, -1.0),
-        (0.793, 0.0, -0.609),
-        (0.788, 0.0, 0.616),
-        (-0.0, 0.0, 1.0),
-        (-0.793, 0.0, 0.609),
-        (0.0, 0.0, -1.0),
-        (1.0, 0.0, 0.0),
-        (-0.0, 0.0, 1.0),
-        (-1.0, 0.0, -0.0),
-        (-1.0, -0.0, -0.0),
-    )
-
-    expected_slow_axes = (
-        (0.793, -0.0, 0.609),
-        (0.0, 1.0, 0.0),
-        (0.0, 1.0, 0.0),
-        (-0.0, 1.0, 0.0),
-        (-0.0, 1.0, 0.0),
-        (-0.0, 1.0, -0.0),
-        (0.695, 0.719, 0.0),
-        (0.0, 0.719, 0.695),
-        (-0.707, 0.707, 0.0),
-        (-0.0, 0.719, -0.695),
-        (-0.0, 0.0, -1.0),
-    )
-
-    (
-        top_left_origins_in_mm,
-        fast_axes,
-        slow_axes,
-    ) = coords_converter.sxd_spherical_to_dials(
-        centre_origin_mag_in_mm=centre_origin_mag_in_mm,
-        gam_in_deg=gam_in_deg,
-        nu_in_deg=nu_in_deg,
-        det_orient_x=det_orient_x,
-        det_orient_z=det_orient_z,
-        panel_size_in_mm=panel_size_in_mm,
-    )
-
-    for i in range(len(expected_top_left_origins_in_mm)):
-
-        assert np.allclose(
-            np.array(fast_axes[i]), np.array(expected_fast_axes[i]), atol=1e-3
-        )
-        assert np.allclose(
-            np.array(slow_axes[i]), np.array(expected_slow_axes[i]), atol=1e-3
-        )
-
-        assert np.allclose(
-            np.array(top_left_origins_in_mm[i]),
-            np.array(expected_top_left_origins_in_mm[i]),
-            atol=1e-3,
-        )
+    assert r_mag == pytest.approx(expected_r_mag, abs=1e-4)
+    assert gam == pytest.approx(expected_gam, abs=1e-4)
+    assert nu == pytest.approx(expected_nu, abs=1e-4)
 
 
-def test_sxd_dials_to_spherical():
+def test_spherical_to_vector():
 
-    panel_size_in_mm = tuple([(192, 192) for i in range(11)])
+    gam = radians(37.5)
+    nu = radians(0)
+    r_mag = 0.225
 
-    dials_origins = (
-        (60.81, 96.0, -236.946),
-        (224.999, -96.0, 96.0),
-        (60.809, -96.0, 236.945),
-        (-214.172, -96.0, 118.198),
-        (-224.999, -96.0, -96.0),
-        (-60.809, -96.0, -236.945),
-        (127.534, -256.614, 96.0),
-        (-96.0, -256.614, 127.534),
-        (-123.036, -258.801, -96.0),
-        (96.0, -256.614, -127.534),
-        (96.0, -278.0, 96.0),
-    )
+    r = coords_converter.spherical_to_vector(r_mag=r_mag, gam=gam, nu=nu)
 
-    dials_fast_axes = (
-        (-3e-06, -1.0, 4e-06),
-        (5e-06, 0.0, -1.0),
-        (0.793356, 0.0, -0.608757),
-        (0.788008, 0.0, 0.615665),
-        (-5e-06, 0.0, 1.0),
-        (-0.793356, 0.0, 0.608757),
-        (5e-06, 0.0, -1.0),
-        (1.0, 0.0, 5e-06),
-        (-5e-06, 0.0, 1.0),
-        (-1.0, 0.0, -5e-06),
-        (-1.0, -0.0, -5e-06),
-    )
+    expected_r = np.array((0.1369713215, 0.000, 0.1785045016))
 
-    dials_slow_axes = (
-        (0.79335, -0.0, 0.608765),
-        (5e-06, 1.0, 0.0),
-        (3e-06, 1.0, 4e-06),
-        (-3e-06, 1.0, 4e-06),
-        (-5e-06, 1.0, 0.0),
-        (-3e-06, 1.0, -4e-06),
-        (0.694662, 0.719336, 0.0),
-        (0.0, 0.719336, 0.694662),
-        (-0.70711, 0.707103, 0.0),
-        (-0.0, 0.719336, -0.694662),
-        (-0.0, 5e-06, -1.0),
-    )
-
-    expected_r_vals = (
-        (136.97132152696219, 0.0, -178.50450156552785),
-        (225.0, 0.0, 1.4210854715202004e-14),
-        (136.97132152696216, 0.0, 178.5045015655279),
-        (-138.5238319482731, 0.0, 177.30241956151244),
-        (-225.0, 0.0, 1.4210854715202004e-14),
-        (-136.97132152696219, 0.0, -178.50450156552787),
-        (194.22174609143582, -187.5577600239293, 1.4210854715202004e-14),
-        (0.0, -187.5577600239293, 194.22174609143582),
-        (-190.9188309203678, -190.91883092036784, 1.4210854715202004e-14),
-        (-2.842170943040401e-14, -187.5577600239293, -194.22174609143582),
-        (0.0, -278.0, 1.9471620496536168e-14),
-    )
-
-    expected_gam_vals = (
-        142.5,
-        90.0,
-        37.5,
-        -38.0,
-        -90.0,
-        -142.5,
-        90.0,
-        0.0,
-        -90.0,
-        180.0,
-        0.0,
-    )
-
-    expected_nu_vals = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -44.0, -44.0, -45.0, -44.0, -90.0)
-
-    r_vals, gam_vals, nu_vals = coords_converter.sxd_dials_to_spherical(
-        top_left_origin_in_mm=dials_origins,
-        fast_axes=dials_fast_axes,
-        slow_axes=dials_slow_axes,
-        panel_size_in_mm=panel_size_in_mm,
-    )
-
-    for i in range(len(expected_r_vals)):
-
-        assert np.allclose(np.array(r_vals[i]), np.array(expected_r_vals[i]), atol=1e-3)
-        assert gam_vals[i] == pytest.approx(expected_gam_vals[i], abs=1e-3)
-        assert nu_vals[i] == pytest.approx(expected_nu_vals[i], abs=1e-3)
+    assert np.allclose(r, expected_r)

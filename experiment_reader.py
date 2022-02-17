@@ -47,10 +47,6 @@ class ExperimentReader(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def convert_panels(self, panels: Tuple[Panel, ...]) -> Tuple[Panel, ...]:
-        pass
-
-    @abstractmethod
     def has_peak_table(self, expt_idx: int = 0) -> bool:
         pass
 
@@ -61,8 +57,7 @@ class ExperimentReader(metaclass=ABCMeta):
         """
 
         reader_panels = reader.get_panels(expt_idx=expt_idx)
-        converted_panels = self.convert_panels(reader_panels)
-        self.replace_panels(new_panels=converted_panels, expt_idx=expt_idx)
+        self.replace_panels(new_panels=reader_panels, expt_idx=expt_idx)
 
         if self.has_peak_table() and reader.has_peak_table():
             reader_peak_table = reader.get_peak_table(expt_idx=expt_idx)
