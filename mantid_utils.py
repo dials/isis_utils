@@ -58,6 +58,9 @@ def spherical_coordinates_to_rotations(
         else:
             gam *= -1
 
+    elif abs(gam - 180) < 1e-1:
+        gam -= 180
+
     elif abs(nu) > 0:
         gam += 180
 

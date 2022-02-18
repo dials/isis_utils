@@ -52,7 +52,7 @@ def panel_axes_direction_flipped(fast_axis: vec3float, slow_axis: vec3float) -> 
 
 
 def get_panel_axes(
-    r: vec3float, gam_in_deg: float, nu_in_deg: float, d_angle: float = 1e-5
+    r_mag: float, gam_in_deg: float, nu_in_deg: float, d_angle: float = 1e-5
 ) -> Tuple[vec3float, vec3float]:
 
     """
@@ -60,8 +60,9 @@ def get_panel_axes(
     perturbing nu and gam by d_angle
     """
 
-    r = r
-    r_mag = np.linalg.norm(r)
+    r = coords_converter.spherical_to_vector(
+        r_mag=r_mag, nu=radians(nu_in_deg), gam=radians(gam_in_deg)
+    )
 
     ry = coords_converter.spherical_to_vector(
         r_mag=r_mag, nu=radians(nu_in_deg - d_angle), gam=radians(gam_in_deg)
