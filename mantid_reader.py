@@ -57,7 +57,7 @@ class MantidReader(ExperimentReader):
         "column_13": np.dtype("<f8"),
         "column_14": np.dtype("<i4"),
         "column_15": np.dtype("<f8"),
-        "column_16": np.dtype("|S16"),
+        "column_16": np.dtype("|S24"),
         "column_17": np.dtype("<i4"),
         "column_18": np.dtype("<f8"),
     }
@@ -104,6 +104,12 @@ class MantidReader(ExperimentReader):
                 return rotations
 
         def get_panel_orentation(name: str) -> Tuple[vec2int, vec2int]:
+
+            """
+            This is a hack for SXD, where the Mantid SXD_Definition.xml
+            does not seem to identify SXD panel 1 as upsidedown.
+            """
+
             if name == "bank1":
                 return np.array((0, -1)), np.array((-1, 0))
             else:
@@ -375,7 +381,7 @@ class MantidReader(ExperimentReader):
         miller_idx_k = np.array([i[1] for i in new_peak_table["miller_indices"]])
         miller_idx_l = np.array([i[2] for i in new_peak_table["miller_indices"]])
         miller_idxs = {"h": miller_idx_h, "k": miller_idx_k, "l": miller_idx_l}
-        size = new_peak_table.get_size()
+        size = len(new_peak_table)
 
         for column in list(pws.keys()):
 
@@ -390,10 +396,9 @@ class MantidReader(ExperimentReader):
                 data = get_resized_array(arr=pws[column][:], new_size=size)
                 del pws[column]
                 pws.create_dataset(column, data=np.array(data, dtype=pws_dt[column]))
-                continue
 
             # Pad with zeros all unknown columns
-            if column not in self._peak_workspace_columns:
+            elif column not in self._peak_workspace_columns:
                 del pws[column]
                 pws.create_dataset(
                     column,

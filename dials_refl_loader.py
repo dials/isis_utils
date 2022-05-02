@@ -148,7 +148,6 @@ def decode_column(column_entry, copy):
 def _get_unpacked(stream_or_path: Union[str, IO, bytes, os.PathLike]):
     """Works out the logic to pass a stream/pathlike to msgpack"""
     try:
-        print(type(stream_or_path))
         path = os.fspath(cast(str, stream_or_path))
         is_fspathlike = True
     except (TypeError, ValueError):
@@ -212,7 +211,6 @@ def load(stream_or_path: Union[IO, os.PathLike], copy=False) -> Dict:
     refdata = root_data[2]
 
     rows = refdata["nrows"]
-    identifiers = refdata["identifiers"]
     data = refdata["data"]
 
     decoded_data = {
@@ -228,12 +226,6 @@ def load(stream_or_path: Union[IO, os.PathLike], copy=False) -> Dict:
             print(
                 f"Warning: Mismatch of column lengths: {name} is {len(column)} instead of expected {rows}"
             )
-
-    # Make an "identifiers" column
-    if "id" in decoded_data and identifiers:
-        decoded_data["experiment_identifier"] = [
-            identifiers[x] for x in decoded_data["id"]
-        ]
 
     return decoded_data
 
