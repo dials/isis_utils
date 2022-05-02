@@ -113,3 +113,19 @@ When visualising both give the same laue plots, consistent with SXD2001 only whe
 ```
 np.arange(min_pixel_idx_range, max_pixel_idx_range).reshape(64,64).T
 ```
+
+### Update SXD Mantid Workspace with DIALS Output
+
+```
+python update_experiment.py mantid_workspace.nxs -take_data dials_experiment.expt
+INFO: Update Experiment:mantid_workspace.nxs copied to mantid_workspace_updated.nxs
+INFO: Update Experiment:Replacing detector panels in mantid_workspace_updated.nxs with those in dials_experiment.expt
+```
+
+### Update SXD Mantid Peaks Workspace with DIALS Output
+```
+python update_experiment.py mantid_peaks_workspace.nxs -take_data dials_experiment.expt dials_reflection_table.refl
+INFO: Update Experiment:mantid_peaks_workspace.nxs copied to mantid_peaks_workspace_updated.nxs
+INFO: Update Experiment:Replacing detector panels in mantid_peaks_workspace_updated.nxs with those in dials_experiment.expt
+INFO: Update Experiment:Replacing peak table in mantid_peaks_workspace_updated.nxs with table from dials_reflection_table.refl
+```
