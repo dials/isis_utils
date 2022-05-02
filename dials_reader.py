@@ -169,6 +169,9 @@ class DIALSReader(ExperimentReader):
     def has_peak_table(self, expt_idx: int = 0) -> bool:
         return self.refl_file_path is not None
 
+    def get_peak_table_file_path(self, expt_idx: int = 0) -> str:
+        return self.refl_file_path
+
     def get_peak_table(self, expt_idx: int = 0) -> PeakTable:
 
         """

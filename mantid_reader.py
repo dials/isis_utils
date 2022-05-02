@@ -278,6 +278,9 @@ class MantidReader(ExperimentReader):
     def get_peak_table(self, expt_idx: int = 0) -> PeakTable:
         raise NotImplementedError
 
+    def get_peak_table_file_path(self, expt_idx: int = 0) -> str:
+        return self.file_path
+
     def has_peak_table(self, expt_idx: int = 0) -> bool:
         self._open(mode="r+", expt_idx=expt_idx, open_xml=False)
         try:

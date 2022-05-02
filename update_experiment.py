@@ -75,12 +75,6 @@ def main():
                 logger.info(f"{file_path} copied to {copy_file_path}")
                 source_reader = experiment_reader_factory(file_path=copy_file_path)
             source_reader.replace_from_reader(reader=reader_to_extract_from)
-            file_string = file1
-            if file2:
-                file_string += f" {file2}"
-            logger.info(
-                f"{source_reader.file_path} updated with results from {file_string}"
-            )
     else:
         parser.print_help()
 

@@ -41,7 +41,7 @@ def test_get_panel_axes():
     nu_in_deg = 0.0
 
     fast_axis, slow_axis = dials_utils.get_panel_axes(
-        r=r, gam_in_deg=gam_in_deg, nu_in_deg=nu_in_deg
+        r_mag=np.linalg.norm(r), gam_in_deg=gam_in_deg, nu_in_deg=nu_in_deg
     )
 
     expected_fast_axis = np.array((0.79335, 0, -0.60876))
